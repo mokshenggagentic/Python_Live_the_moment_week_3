@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Storing Scraped and API Data — MokshPath</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --orange:#E87A2E;--orange-dark:#D06A20;--orange-light:#F5943E;--orange-glow:rgba(232,122,46,0.12);
+  --navy:#2B2D42;--navy-dark:#1A1B2E;
+  --bg:#F3EDE7;--bg-card:#FFFFFF;--bg-light:#F9F5F0;
+  --text-primary:#2B2D42;--text-secondary:#6B6D7B;--text-muted:#9597A6;
+  --border:#E5DDD4;--green:#4CAF50;--green-light:#E8F5E9;--red:#E5484D;--red-light:#FDE8E8;
+  --blue:#3B7DD8;--blue-light:#E3EEFB;--purple:#7C5CD7;--purple-light:#EDE6FB;
+  --yellow:#E0A800;--yellow-light:#FFF8E1;
+  --code-bg:#1A1B2E;--code-text:#E5DDD4;
+  --shadow-sm:0 2px 8px rgba(43,45,66,0.06);--shadow-md:0 8px 24px rgba(43,45,66,0.08);
+  --radius:14px;--radius-sm:8px
+}
+html{scroll-behavior:smooth}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text-primary);-webkit-font-smoothing:antialiased;line-height:1.5}
+
+.header{background:var(--bg-card);border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm)}
+.header-left{display:flex;flex-direction:column;gap:.1rem}
+.header-crumb{font-size:.7rem;color:var(--text-muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.header-crumb span{color:var(--orange)}
+.header-title{font-family:'DM Serif Display',serif;font-size:1.3rem;color:var(--navy);line-height:1.1}
+.header-logo{width:54px;height:84px;flex-shrink:0}
+
+.hero{padding:3.5rem 2rem 2rem;max-width:1100px;margin:0 auto;text-align:center}
+.hero-badge{display:inline-flex;align-items:center;gap:.45rem;padding:.4rem 1rem;border-radius:50px;background:var(--orange-glow);color:var(--orange);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:1.2rem}
+.hero-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--orange);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:.7}}
+.hero h1{font-family:'DM Serif Display',serif;font-size:clamp(2rem,4.5vw,3.2rem);line-height:1.13;color:var(--navy);margin-bottom:1rem}
+.hero h1 em{font-style:normal;color:var(--orange)}
+.hero-sub{font-size:1.05rem;color:var(--text-secondary);line-height:1.7;max-width:680px;margin:0 auto 2rem}
+
+.case-study{max-width:1100px;margin:0 auto 3rem;padding:0 2rem}
+.case-study-card{background:linear-gradient(135deg,var(--navy-dark),var(--navy));border-radius:var(--radius);padding:2rem 2.5rem;color:#fff;display:flex;gap:1.5rem;align-items:center;position:relative;overflow:hidden}
+.case-study-card::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(232,122,46,0.12)}
+.case-study-icon{width:64px;height:64px;border-radius:16px;background:var(--orange);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.8rem;box-shadow:0 4px 20px rgba(232,122,46,0.4);position:relative;z-index:1}
+.case-study-content{position:relative;z-index:1}
+.case-study-label{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--orange-light);margin-bottom:.3rem}
+.case-study-content h2{font-family:'DM Serif Display',serif;font-size:1.5rem;margin-bottom:.4rem}
+.case-study-content h2 em{font-style:normal;color:var(--orange-light)}
+.case-study-content p{font-size:.92rem;color:rgba(255,255,255,0.75);line-height:1.6;max-width:760px}
+
+.lessons{max-width:1100px;margin:0 auto;padding:0 2rem 4rem}
+.lesson{background:var(--bg-card);border-radius:var(--radius);margin-bottom:2.5rem;overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow-sm)}
+.lesson-head{padding:1.8rem 2rem 1.3rem;border-bottom:1px solid var(--border);background:var(--bg-light)}
+.lesson-num{display:inline-flex;align-items:center;gap:.5rem;font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--orange);margin-bottom:.6rem}
+.lesson-num-circle{width:24px;height:24px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem}
+.lesson-head h2{font-family:'DM Serif Display',serif;font-size:1.6rem;color:var(--navy);margin-bottom:.4rem;line-height:1.2}
+.lesson-head .lesson-intro{font-size:.95rem;color:var(--text-secondary);line-height:1.65;max-width:780px}
+.lesson-body{padding:2rem}
+
+.explain{background:var(--bg-light);border-radius:var(--radius-sm);padding:1.2rem 1.4rem;margin-bottom:1.5rem;border-left:3px solid var(--orange);font-size:.9rem;color:var(--text-secondary);line-height:1.65}
+.explain strong{color:var(--navy);font-weight:600}
+.explain code{background:#fff;padding:.1rem .4rem;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.82em;color:var(--orange-dark);border:1px solid var(--border)}
+
+.demo{background:var(--bg-light);border-radius:var(--radius);padding:1.5rem;border:1px dashed var(--border)}
+.demo-title{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.demo-title::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--orange)}
+
+/* --- CSV append --- */
+.csv-controls{display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem;flex-wrap:wrap}
+.csv-runbtn{padding:.6rem 1.2rem;background:var(--orange);color:#fff;border:none;border-radius:7px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.82rem;cursor:pointer;transition:all .15s}
+.csv-runbtn:hover{background:var(--orange-dark)}
+.csv-runbtn:disabled{background:var(--text-muted);cursor:not-allowed}
+.csv-meta{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text-secondary);background:#fff;padding:.45rem .8rem;border-radius:6px;border:1px solid var(--border)}
+.csv-meta strong{color:var(--navy)}
+.csv-clear{padding:.5rem .9rem;background:#fff;border:1.5px solid var(--border);border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:.76rem;cursor:pointer;color:var(--text-secondary)}
+.csv-clear:hover{border-color:var(--red);color:var(--red)}
+.csv-file{background:#0F1020;color:#E5DDD4;border-radius:8px;padding:.85rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.74rem;line-height:1.7;max-height:340px;overflow-y:auto}
+.csv-file .filename{color:#7FDBCA;font-weight:700;display:block;margin-bottom:.4rem}
+.csv-file .header{color:#A5D6FF;display:block}
+.csv-file .row{display:block;color:#E5DDD4}
+.csv-file .row.new{background:rgba(232,122,46,0.22);animation:rowIn .35s ease;border-radius:3px;padding:.05rem .35rem;margin:.05rem -0.35rem}
+@keyframes rowIn{from{opacity:0;transform:translateX(-15px);background:rgba(232,122,46,0.5)}to{opacity:1;transform:translateX(0);background:rgba(232,122,46,0.22)}}
+.csv-file .price-up{color:#7FDBCA}.csv-file .price-down{color:#FF8B6B}
+.csv-empty{color:var(--text-muted);font-style:italic}
+
+/* --- Dedup --- */
+.dedup-split{display:grid;grid-template-columns:1fr 80px 1fr;gap:.5rem;align-items:center;margin-bottom:.9rem}
+@media(max-width:760px){.dedup-split{grid-template-columns:1fr;gap:.8rem}}
+.dedup-card{background:#fff;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.dedup-head{padding:.5rem .9rem;font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.dedup-head.before{background:var(--red-light);color:var(--red)}
+.dedup-head.after{background:var(--green-light);color:var(--green)}
+.dedup-head .pill{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:rgba(255,255,255,0.5);padding:.1rem .4rem;border-radius:3px}
+.dedup-table{width:100%;font-family:'JetBrains Mono',monospace;font-size:.72rem;border-collapse:collapse}
+.dedup-table th{background:var(--bg-light);padding:.35rem .55rem;text-align:left;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--navy);border-bottom:1px solid var(--border)}
+.dedup-table td{padding:.3rem .55rem;border-bottom:1px solid #F3EDE7}
+.dedup-table tr.dup td{background:#FFF0F0;color:var(--red)}
+.dedup-table tr.dup td::before{content:'⚠ ';color:var(--red)}
+.dedup-table tr.dup td:not(:first-child)::before{content:''}
+.dedup-arrow{display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--orange);font-weight:700}
+@media(max-width:760px){.dedup-arrow{display:none}}
+.dedup-controls{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.9rem}
+.dedup-controls .label{font-size:.78rem;color:var(--text-secondary);font-weight:600}
+.dedup-keys{display:flex;gap:.4rem;flex-wrap:wrap}
+.dedup-key{padding:.35rem .75rem;background:#fff;border:1.5px solid var(--border);border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:.72rem;cursor:pointer;transition:all .15s;font-weight:600;color:var(--text-secondary)}
+.dedup-key.active{background:var(--orange);border-color:var(--orange);color:#fff}
+.dedup-key:not(.active):hover{border-color:var(--orange);color:var(--orange)}
+.dedup-runbtn{padding:.45rem 1rem;background:var(--orange);color:#fff;border:none;border-radius:6px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.76rem;cursor:pointer}
+.dedup-runbtn:hover{background:var(--orange-dark)}
+.dedup-runbtn:disabled{background:var(--text-muted);cursor:not-allowed}
+
+/* --- Schedule library clock --- */
+.sched-frame{background:#fff;border:1px solid var(--border);border-radius:10px;padding:1.3rem 1.4rem}
+.sched-controls{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center}
+.sched-startbtn{padding:.55rem 1.1rem;background:var(--orange);color:#fff;border:none;border-radius:7px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.8rem;cursor:pointer}
+.sched-startbtn:hover{background:var(--orange-dark)}
+.sched-stopbtn{padding:.55rem 1.1rem;background:#fff;border:1.5px solid var(--border);border-radius:7px;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:.78rem;cursor:pointer;color:var(--text-secondary)}
+.sched-stopbtn:hover{border-color:var(--red);color:var(--red)}
+.sched-speed{display:flex;gap:.3rem;margin-left:auto}
+.sched-speed button{padding:.35rem .65rem;background:#fff;border:1.5px solid var(--border);border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:.72rem;cursor:pointer;color:var(--text-secondary);font-weight:600}
+.sched-speed button.active{background:var(--navy-dark);border-color:var(--navy-dark);color:#fff}
+.sched-display{display:grid;grid-template-columns:140px 1fr;gap:1rem;align-items:start}
+@media(max-width:660px){.sched-display{grid-template-columns:1fr}}
+.sched-clock{background:linear-gradient(135deg,var(--navy-dark),var(--navy));color:#fff;padding:1rem;border-radius:10px;text-align:center}
+.sched-clock-time{font-family:'JetBrains Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--orange-light);letter-spacing:.04em}
+.sched-clock-date{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:rgba(255,255,255,0.6);margin-top:.2rem}
+.sched-clock-label{font-size:.62rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.08em;margin-top:.6rem;padding-top:.5rem;border-top:1px solid rgba(255,255,255,0.1)}
+.sched-jobs{display:flex;flex-direction:column;gap:.5rem}
+.sched-job{background:var(--bg-light);border:1px solid var(--border);border-radius:7px;padding:.6rem .85rem;font-family:'JetBrains Mono',monospace;font-size:.74rem;display:flex;align-items:center;gap:.6rem;transition:all .25s}
+.sched-job.firing{background:var(--orange);color:#fff;border-color:var(--orange);transform:scale(1.02);box-shadow:0 6px 18px rgba(232,122,46,0.35)}
+.sched-job .icon{font-size:.95rem}
+.sched-job .schedule{color:var(--orange-dark);font-weight:700;min-width:130px}
+.sched-job.firing .schedule{color:#fff}
+.sched-job .task{flex:1;color:var(--navy)}
+.sched-job.firing .task{color:#fff}
+.sched-job .count{background:#fff;color:var(--text-secondary);padding:.1rem .45rem;border-radius:10px;font-size:.65rem;font-weight:700}
+.sched-job.firing .count{background:rgba(255,255,255,0.2);color:#fff}
+.sched-log{background:#0F1020;color:#E5DDD4;border-radius:8px;padding:.7rem .9rem;font-family:'JetBrains Mono',monospace;font-size:.7rem;line-height:1.6;max-height:140px;overflow-y:auto;margin-top:.9rem}
+.sched-log-row{padding:.05rem 0;display:flex;gap:.6rem}
+.sched-log-row .t{color:#9597A6;flex-shrink:0}
+.sched-log-row .m{color:#E5DDD4}
+.sched-log-row.fire .m{color:#7FDBCA}
+
+/* --- Cron decoder --- */
+.cron-frame{background:#fff;border:1px solid var(--border);border-radius:10px;padding:1.3rem 1.4rem}
+.cron-presets{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem}
+.cron-preset{padding:.4rem .8rem;background:var(--bg-light);border:1.5px solid var(--border);border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:.72rem;cursor:pointer;color:var(--text-secondary);font-weight:600;transition:all .15s}
+.cron-preset:hover{border-color:var(--orange);color:var(--orange)}
+.cron-preset.active{background:var(--navy-dark);border-color:var(--navy-dark);color:#fff}
+.cron-expression{display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem;margin-bottom:1rem}
+@media(max-width:560px){.cron-expression{grid-template-columns:repeat(5,minmax(50px,1fr));overflow-x:auto;padding-bottom:.3rem}}
+.cron-field{background:var(--bg-light);border:2px solid var(--orange);border-radius:7px;padding:.7rem .5rem;text-align:center}
+.cron-field .label{font-size:.6rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem;font-weight:700}
+.cron-field .value{font-family:'JetBrains Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--orange);line-height:1}
+.cron-field .range{font-size:.62rem;color:var(--text-muted);margin-top:.25rem;font-family:'JetBrains Mono',monospace}
+.cron-translation{background:linear-gradient(135deg,#FFF8F0,#FCF1E8);border:1px solid #F0DBC8;border-radius:8px;padding:1rem 1.2rem;display:flex;align-items:center;gap:.7rem}
+.cron-translation .arrow{color:var(--orange);font-size:1.4rem;font-weight:700}
+.cron-translation .meaning{font-family:'DM Serif Display',serif;font-size:1.1rem;color:var(--navy);line-height:1.3;flex:1}
+.cron-translation .meaning em{font-style:normal;color:var(--orange)}
+.cron-next{margin-top:.8rem;background:var(--bg-light);border-radius:6px;padding:.7rem .9rem;font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--text-secondary);line-height:1.6}
+.cron-next strong{color:var(--navy);display:block;margin-bottom:.3rem;font-size:.7rem;letter-spacing:.04em;text-transform:uppercase;font-family:'Plus Jakarta Sans',sans-serif}
+.cron-next .upcoming{color:var(--orange-dark)}
+
+.code-toggle{margin-top:1.2rem}
+.code-toggle-btn{background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:.5rem 1rem;font-size:.78rem;font-weight:600;color:var(--text-secondary);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:.4rem;transition:all .2s}
+.code-toggle-btn:hover{border-color:var(--orange);color:var(--orange)}
+.code-toggle-btn svg{width:13px;height:13px;transition:transform .2s}
+.code-toggle-btn.open svg{transform:rotate(90deg)}
+.code-block{background:var(--code-bg);color:var(--code-text);border-radius:var(--radius-sm);padding:1.2rem 1.4rem;margin-top:.8rem;font-family:'JetBrains Mono',monospace;font-size:.82rem;line-height:1.65;overflow-x:auto;display:none;white-space:pre}
+.code-block.show{display:block;animation:slideDown .3s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.code-block .kw{color:#FF8B6B}.code-block .fn{color:#7FDBCA}.code-block .str{color:#F5C518}.code-block .num{color:#A5D6FF}.code-block .com{color:#7E8AA0;font-style:italic}.code-block .var{color:#F5943E}
+
+.try-it{background:linear-gradient(135deg,#FFF8F0,#FCF1E8);border:1px solid #F0DBC8;border-radius:var(--radius-sm);padding:1.3rem 1.5rem;margin-top:1.5rem}
+.try-it-label{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--orange);margin-bottom:.45rem;display:flex;align-items:center;gap:.4rem}
+.try-it h4{font-family:'DM Serif Display',serif;font-size:1.05rem;color:var(--navy);margin-bottom:.35rem}
+.try-it p{font-size:.85rem;color:var(--text-secondary);line-height:1.6}
+.try-it code{background:var(--bg-light);padding:.1rem .3rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85em}
+
+.footer-nav{max-width:1100px;margin:0 auto;padding:0 2rem 4rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.footer-link{flex:1;min-width:200px;background:var(--bg-card);padding:1.2rem 1.4rem;border-radius:var(--radius-sm);border:1px solid var(--border);text-decoration:none;color:var(--text-primary);display:flex;align-items:center;gap:.8rem;transition:all .25s}
+.footer-link:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--orange)}
+.footer-link.next{justify-content:flex-end;text-align:right}
+.footer-link-meta{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.2rem}
+.footer-link-title{font-family:'DM Serif Display',serif;font-size:1.05rem;color:var(--navy)}
+.footer-link svg{width:18px;height:18px;color:var(--orange);flex-shrink:0}
+
+.footer-base{background:var(--navy-dark);color:rgba(255,255,255,0.55);padding:1.5rem 2rem;text-align:center;font-size:.78rem}
+.footer-base span{color:var(--orange)}
+
+@media(max-width:680px){
+  .header{padding:.8rem 1rem}.header-logo{width:42px;height:64px}.header-title{font-size:1rem}
+  .hero{padding:2.5rem 1rem 1rem}.lessons,.case-study,.footer-nav{padding-left:1rem;padding-right:1rem}
+  .lesson-body{padding:1.2rem}.lesson-head{padding:1.3rem 1.3rem 1rem}
+  .case-study-card{flex-direction:column;text-align:center;padding:1.6rem;gap:1rem}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="header-crumb">Foundations · Module <span>12</span></div>
+    <div class="header-title">Storing Scraped &amp; API Data</div>
+  </div>
+  <svg class="header-logo" viewBox="0 0 955 1486" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="MokshPath logo">
+    <path d="M493.477 314.275H460.795C456.99 314.275 453.906 317.356 453.906 321.155C453.906 324.955 456.99 328.035 460.795 328.035H493.477C497.282 328.035 500.366 324.955 500.366 321.155C500.366 317.356 497.282 314.275 493.477 314.275Z" fill="#EF7F1A"/>
+    <path d="M493.477 333.881H460.795C456.99 333.881 453.906 336.961 453.906 340.761C453.906 344.561 456.99 347.641 460.795 347.641H493.477C497.282 347.641 500.366 344.561 500.366 340.761C500.366 336.961 497.282 333.881 493.477 333.881Z" fill="#EF7F1A"/>
+    <path d="M493.477 353.486H460.795C456.99 353.486 453.906 356.567 453.906 360.366C453.906 364.166 456.99 367.246 460.795 367.246H493.477C497.282 367.246 500.366 364.166 500.366 360.366C500.366 356.567 497.282 353.486 493.477 353.486Z" fill="#EF7F1A"/>
+    <path d="M660.991 1316.23H299.4V1478.7H660.991V1316.23Z" fill="#2F1D19"/>
+    <path d="M660.991 1016.12H299.4V1178.6H660.991V1016.12Z" fill="#A34E1C"/>
+    <path d="M740.832 490.575C778.018 490.575 808.162 454.086 808.162 409.075C808.162 364.063 778.018 327.574 740.832 327.574C703.647 327.574 673.502 364.063 673.502 409.075C673.502 454.086 703.647 490.575 740.832 490.575Z" fill="#D9DADA"/>
+    <path d="M210.549 490.575C247.734 490.575 277.879 454.086 277.879 409.075C277.879 364.063 247.734 327.574 210.549 327.574C173.364 327.574 143.219 364.063 143.219 409.075C143.219 454.086 173.364 490.575 210.549 490.575Z" fill="#D9DADA"/>
+    <path d="M475.7 57.6211C652.854 57.6211 759.123 184.726 759.123 355.488C759.123 526.249 699.228 703.848 475.7 703.848C252.154 703.848 192.26 526.249 192.26 355.488C192.26 184.726 298.545 57.6211 475.7 57.6211Z" fill="#D1D0CC"/>
+    <path d="M690.083 149.617C734.816 202.179 759.123 273.834 759.123 355.488C759.123 526.249 699.228 703.848 475.7 703.848C252.154 703.848 192.26 526.249 192.26 355.488C192.26 280.244 212.891 213.495 251.129 162.352C239.864 193.872 233.642 228.349 233.642 264.467C233.642 414.579 340.834 536.283 473.05 536.283C605.283 536.283 712.475 414.579 712.475 264.467C712.475 223.426 704.441 184.504 690.083 149.617Z" fill="#828991"/>
+    <path d="M477.546 168.932C633.402 168.932 709.638 238.108 712.834 376.067C716.031 514.01 666.136 618.313 477.546 618.313C288.973 618.313 237.164 528.095 238.429 376.067C239.711 224.04 321.707 168.932 477.546 168.932Z" fill="#412C23"/>
+    <path d="M426.283 434.613C416.284 443.092 403.344 448.202 389.208 448.202C375.072 448.202 362.132 443.092 352.133 434.613H426.283Z" fill="#008DD2"/>
+    <path d="M602.086 434.613C592.087 443.092 579.147 448.202 565.011 448.202C550.892 448.202 537.953 443.092 527.953 434.613H602.086Z" fill="#008DD2"/>
+    <path d="M719.552 1228.71C719.552 1228.71 837.41 1213.98 906.244 1266.95C975.096 1319.91 968.395 1403.32 895.903 1446.99C823.41 1490.68 718.355 1492.15 622.633 1478.09C526.894 1464 529.099 1442.1 369.243 1471.32C178.893 1506.1 10.7125 1474.96 0.918093 1375.46C-8.87633 1275.94 61.3427 1243.69 132.946 1237.09C204.55 1230.47 403.361 1247.36 456.333 1262.23C509.322 1277.1 719.552 1228.71 719.552 1228.71Z" fill="#EF7F1A"/>
+    <path d="M475.307 739.607C516.775 739.607 553.765 753.949 583.422 778.306C563.029 805.536 522.433 824.099 475.683 824.099C428.694 824.099 387.943 805.365 367.637 777.93C397.208 753.795 434.044 739.607 475.307 739.607Z" fill="#A4ACAE"/>
+    <path d="M537.013 747.316L546.585 751.47C547.08 751.692 546.345 752.103 546.841 752.342L555.371 756.444C555.866 756.683 554.943 757.367 555.422 757.658C571.079 767.298 585.643 778.922 598.565 792.648C575.336 965.751 665.827 1157.67 475.306 1171.02C393.771 1176.75 322.339 1107.27 299.4 1026.88C295.947 1014.77 299.177 1004.35 297.536 991.271C291.263 985.305 289.297 976.673 289.109 970.725C289.075 969.545 299.912 968.434 300.545 968.588C297.622 956.247 289.981 941.564 293.109 917.172C395.874 896.455 497.681 831.569 537.013 747.316Z" fill="#EC691F"/>
+  </svg>
+</header>
+
+<section class="hero">
+  <div class="hero-badge"><span class="dot"></span>Module 12 · Storage</div>
+  <h1>Pulled the data — <em>now keep it.</em></h1>
+  <p class="hero-sub">Scraping or calling an API gives you data <em>once</em>. The interesting work happens when you keep doing it — every hour, every day — and the data starts piling up into a history you can actually analyze. Today we build that pile, carefully.</p>
+</section>
+
+<section class="case-study">
+  <div class="case-study-card">
+    <div class="case-study-icon">📈</div>
+    <div class="case-study-content">
+      <div class="case-study-label">The Case · DalalStreet Tracker</div>
+      <h2>A personal data lake of <em>NSE stock prices,</em> grown one day at a time</h2>
+      <p>You want to track the closing prices of 12 NSE-listed companies for your own research. No expensive Bloomberg terminal — just a Python script that runs every weekday after market close, scrapes the prices, and appends a clean row per stock to a CSV. Over months it becomes your personal historical dataset.</p>
+    </div>
+  </div>
+</section>
+
+<main class="lessons">
+
+  <!-- LESSON 1: CSV append -->
+  <article class="lesson">
+    <div class="lesson-head">
+      <div class="lesson-num"><span class="lesson-num-circle">1</span>Appending to CSV · the easiest persistent storage</div>
+      <h2>One file, one row per fetch, growing forever</h2>
+      <p class="lesson-intro">A CSV is just a text file with comma-separated rows. To save scraped data, you don't need a database — you open the file in <em>append</em> mode and write one row per record. Click "Run scraper" a few times and watch the file grow.</p>
+    </div>
+    <div class="lesson-body">
+      <div class="explain">
+        Python file modes that matter for storage: <code>"w"</code> overwrites the file (dangerous — destroys history), <code>"a"</code> appends to the end (safe — keeps history), <code>"x"</code> creates only if missing (errors if exists). For tabular data, use pandas: <code>df.to_csv("file.csv", mode="a", header=not exists)</code>. The <code>header=</code> trick writes column names only on the first run.
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">Click Run repeatedly · each run appends a fresh batch of rows</div>
+        <div class="csv-controls">
+          <button class="csv-runbtn" id="csvRun">▶ Run scraper</button>
+          <button class="csv-clear" id="csvClear">Clear file</button>
+          <div class="csv-meta">Runs: <strong id="csvRunCount">0</strong> · Rows: <strong id="csvRowCount">0</strong></div>
+        </div>
+        <div class="csv-file" id="csvFile"></div>
+
+        <div class="code-toggle">
+          <button class="code-toggle-btn" onclick="toggleCode(this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg> Show the append-to-CSV pattern</button>
+<pre class="code-block"><span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="kw">from</span> pathlib <span class="kw">import</span> Path
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime
+
+CSV_PATH = <span class="fn">Path</span>(<span class="str">"data/nse_prices.csv"</span>)
+CSV_PATH.parent.<span class="fn">mkdir</span>(parents=<span class="kw">True</span>, exist_ok=<span class="kw">True</span>)
+
+<span class="kw">def</span> <span class="fn">scrape_prices</span>():
+    <span class="com"># ... fetch from NSE / Yahoo / your source ...</span>
+    <span class="kw">return</span> pd.<span class="fn">DataFrame</span>([
+        {<span class="str">"date"</span>: <span class="str">"2026-05-25"</span>, <span class="str">"symbol"</span>: <span class="str">"RELIANCE"</span>, <span class="str">"close"</span>: <span class="num">2812.40</span>},
+        {<span class="str">"date"</span>: <span class="str">"2026-05-25"</span>, <span class="str">"symbol"</span>: <span class="str">"TCS"</span>,      <span class="str">"close"</span>: <span class="num">3654.10</span>},
+    ])
+
+<span class="kw">def</span> <span class="fn">append_to_csv</span>(df, path):
+    file_exists = path.<span class="fn">exists</span>()
+    df.<span class="fn">to_csv</span>(
+        path,
+        mode=<span class="str">"a"</span>,                          <span class="com"># append, don't overwrite</span>
+        header=<span class="kw">not</span> file_exists,            <span class="com"># write header only first time</span>
+        index=<span class="kw">False</span>
+    )
+
+prices = <span class="fn">scrape_prices</span>()
+<span class="fn">append_to_csv</span>(prices, CSV_PATH)
+<span class="fn">print</span>(<span class="str">f"Appended {len(prices)} rows at {datetime.<span class="fn">now</span>()}"</span>)</pre>
+        </div>
+
+        <div class="try-it">
+          <div class="try-it-label">→ Try this</div>
+          <h4>Always add the timestamp column yourself</h4>
+          <p>The most common scraper bug: forgetting to record <em>when</em> each row was scraped. Your CSV has the closing price but no clue which trading day it belonged to, because the page just said "Today: ₹2812". Add a <code>scraped_at</code> or <code>date</code> column to every row before appending — your future self will thank you when those rows look identical six months later.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- LESSON 2: Deduplication -->
+  <article class="lesson">
+    <div class="lesson-head">
+      <div class="lesson-num"><span class="lesson-num-circle">2</span>Deduplication · stop the same row from showing up twice</div>
+      <h2>Why scrapers always produce duplicates — and how to clean them</h2>
+      <p class="lesson-intro">Your scraper might run twice by accident, or the source might re-publish the same record under a slightly different timestamp. Pick a <em>key</em> (the column or columns that should be unique), then drop duplicates by that key.</p>
+    </div>
+    <div class="lesson-body">
+      <div class="explain">
+        The key insight: "duplicate" depends on what you call the same. Two rows with identical symbol+date are duplicates if you only want one price per stock per day. The same two rows might NOT be duplicates if you also care about scrape_time. Pick your <strong>uniqueness key</strong> first, then use <code>df.drop_duplicates(subset=[...], keep="last")</code> to clean.
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">Pick a key · click "Drop duplicates" to clean the file</div>
+        <div class="dedup-controls">
+          <span class="label">Dedupe by:</span>
+          <div class="dedup-keys" id="dedupKeys">
+            <button class="dedup-key" data-k="symbol">symbol</button>
+            <button class="dedup-key active" data-k="symbol+date">symbol+date</button>
+            <button class="dedup-key" data-k="all">all columns</button>
+          </div>
+          <button class="dedup-runbtn" id="dedupRun">▶ drop_duplicates()</button>
+        </div>
+
+        <div class="dedup-split">
+          <div class="dedup-card">
+            <div class="dedup-head before">Before · raw scrape <span class="pill" id="beforeCount">8 rows</span></div>
+            <table class="dedup-table" id="beforeTable"></table>
+          </div>
+          <div class="dedup-arrow">→</div>
+          <div class="dedup-card">
+            <div class="dedup-head after">After · deduped <span class="pill" id="afterCount">— rows</span></div>
+            <table class="dedup-table" id="afterTable"></table>
+          </div>
+        </div>
+
+        <div class="code-toggle">
+          <button class="code-toggle-btn" onclick="toggleCode(this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg> Show the dedup patterns in pandas</button>
+<pre class="code-block"><span class="kw">import</span> pandas <span class="kw">as</span> pd
+
+df = pd.<span class="fn">read_csv</span>(<span class="str">"data/nse_prices.csv"</span>, parse_dates=[<span class="str">"date"</span>])
+
+<span class="com"># ─── Drop rows that are duplicates across ALL columns ──────</span>
+df = df.<span class="fn">drop_duplicates</span>()
+
+<span class="com"># ─── Better: dedupe by your business key ───────────────────</span>
+<span class="com"># "one row per symbol per day" → key is (symbol, date)</span>
+df = df.<span class="fn">drop_duplicates</span>(subset=[<span class="str">"symbol"</span>, <span class="str">"date"</span>], keep=<span class="str">"last"</span>)
+
+<span class="com"># keep="last" → if a later scrape corrected the price, keep that</span>
+<span class="com"># keep="first" → trust the first value you scraped, ignore later ones</span>
+
+<span class="com"># ─── Defensive pattern: dedupe BEFORE appending ────────────</span>
+<span class="kw">def</span> <span class="fn">safe_append</span>(new_df, path, key_cols):
+    <span class="kw">if</span> path.<span class="fn">exists</span>():
+        old = pd.<span class="fn">read_csv</span>(path)
+        combined = pd.<span class="fn">concat</span>([old, new_df], ignore_index=<span class="kw">True</span>)
+        combined = combined.<span class="fn">drop_duplicates</span>(subset=key_cols, keep=<span class="str">"last"</span>)
+        combined.<span class="fn">to_csv</span>(path, index=<span class="kw">False</span>)
+    <span class="kw">else</span>:
+        new_df.<span class="fn">to_csv</span>(path, index=<span class="kw">False</span>)
+
+<span class="fn">safe_append</span>(prices, CSV_PATH, key_cols=[<span class="str">"symbol"</span>, <span class="str">"date"</span>])</pre>
+        </div>
+
+        <div class="try-it">
+          <div class="try-it-label">→ Try this</div>
+          <h4>Decide the uniqueness key on day one</h4>
+          <p>Before you write a single line of storage code, answer this question on paper: "What makes two of my rows the same row?" For NSE prices: symbol + date. For tweets: tweet_id. For shipments: shipment_id. For weather: city + timestamp. Write the answer in a comment at the top of your file. Then everywhere you append, dedupe by that exact key. This single habit prevents the most common data quality issue in scraped datasets.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- LESSON 3: schedule library -->
+  <article class="lesson">
+    <div class="lesson-head">
+      <div class="lesson-num"><span class="lesson-num-circle">3</span>The <code style="font-family:'JetBrains Mono';color:var(--orange-dark);font-size:.85em">schedule</code> library · cron without leaving Python</div>
+      <h2>Tell jobs to run every X minutes, every day at Y o'clock</h2>
+      <p class="lesson-intro">The <code>schedule</code> library is the simplest way to make a Python script run things on a timetable. Press Start to watch a sped-up day: a job firing every "5 minutes", another at "09:30 every weekday", and a daily cleanup at "midnight".</p>
+    </div>
+    <div class="lesson-body">
+      <div class="explain">
+        Built right into Python's mental model: <code>schedule.every(5).minutes.do(scrape)</code> reads like an English sentence. The library doesn't run your job — it just remembers <em>when</em> to. You sit in a <code>while True</code> loop that calls <code>schedule.run_pending()</code> every second, and the library fires the right jobs at the right times. Great for development and small servers; not great for production HA (use cron or systemd for that).
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">A simulated day · watch three scheduled jobs fire</div>
+        <div class="sched-frame">
+          <div class="sched-controls">
+            <button class="sched-startbtn" id="schedStart">▶ Start simulated day</button>
+            <button class="sched-stopbtn" id="schedStop">⏸ Pause</button>
+            <button class="sched-stopbtn" id="schedReset">↺ Reset</button>
+            <div class="sched-speed">
+              <button data-speed="1" class="active">1×</button>
+              <button data-speed="2">2×</button>
+              <button data-speed="4">4×</button>
+            </div>
+          </div>
+
+          <div class="sched-display">
+            <div class="sched-clock">
+              <div class="sched-clock-time" id="schedTime">09:00</div>
+              <div class="sched-clock-date">Mon · simulated</div>
+              <div class="sched-clock-label">Server clock</div>
+            </div>
+            <div class="sched-jobs">
+              <div class="sched-job" data-job="every5">
+                <span class="icon">📊</span>
+                <span class="schedule">every(5).minutes</span>
+                <span class="task">scrape_intraday()</span>
+                <span class="count" id="cntEvery5">0</span>
+              </div>
+              <div class="sched-job" data-job="weekday">
+                <span class="icon">📈</span>
+                <span class="schedule">at("09:30") weekday</span>
+                <span class="task">scrape_open_prices()</span>
+                <span class="count" id="cntWeekday">0</span>
+              </div>
+              <div class="sched-job" data-job="daily">
+                <span class="icon">🧹</span>
+                <span class="schedule">day.at("00:00")</span>
+                <span class="task">dedupe_and_archive()</span>
+                <span class="count" id="cntDaily">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="sched-log" id="schedLog"><div class="sched-log-row"><span class="t">--:--</span><span class="m">Press Start to begin the simulated day.</span></div></div>
+        </div>
+
+        <div class="code-toggle">
+          <button class="code-toggle-btn" onclick="toggleCode(this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg> Show the schedule library code</button>
+<pre class="code-block"><span class="kw">import</span> schedule
+<span class="kw">import</span> time
+
+<span class="kw">def</span> <span class="fn">scrape_intraday</span>():    <span class="fn">print</span>(<span class="str">"📊 quick price snapshot"</span>)
+<span class="kw">def</span> <span class="fn">scrape_open_prices</span>(): <span class="fn">print</span>(<span class="str">"📈 market opened — full scrape"</span>)
+<span class="kw">def</span> <span class="fn">dedupe_and_archive</span>(): <span class="fn">print</span>(<span class="str">"🧹 nightly cleanup"</span>)
+
+<span class="com"># Read the schedule like English sentences</span>
+schedule.<span class="fn">every</span>(<span class="num">5</span>).minutes.<span class="fn">do</span>(scrape_intraday)
+schedule.<span class="fn">every</span>().monday.at(<span class="str">"09:30"</span>).do(scrape_open_prices)
+schedule.<span class="fn">every</span>().tuesday.at(<span class="str">"09:30"</span>).do(scrape_open_prices)
+<span class="com"># ...add Wed, Thu, Fri the same way (or use a loop)</span>
+schedule.<span class="fn">every</span>().day.at(<span class="str">"00:00"</span>).do(dedupe_and_archive)
+
+<span class="com"># The library just remembers what to fire when.</span>
+<span class="com"># YOU have to keep the loop running so it can fire jobs.</span>
+<span class="kw">while True</span>:
+    schedule.<span class="fn">run_pending</span>()
+    time.<span class="fn">sleep</span>(<span class="num">1</span>)</pre>
+        </div>
+
+        <div class="try-it">
+          <div class="try-it-label">→ Try this</div>
+          <h4>Always log the start and end of each job</h4>
+          <p>Wrap every scheduled function with <code>print(f"START {name} at {datetime.now()}")</code> and the same at the end. When something silently breaks at 3 AM, those logs are the only way you'll know which job ran, when, and whether it finished. Production teams use a <code>logging</code> module, but even <code>print()</code> redirected to a log file is enough for your personal scraper.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- LESSON 4: Cron -->
+  <article class="lesson">
+    <div class="lesson-head">
+      <div class="lesson-num"><span class="lesson-num-circle">4</span>Cron basics · the language servers actually speak</div>
+      <h2>Five numbers that schedule the entire UNIX world</h2>
+      <p class="lesson-intro">When you deploy your scraper to a real server, you won't keep a Python loop running 24/7 — you'll register the job with <strong>cron</strong>. Cron schedules look like <code>30 9 * * 1-5</code>. Click a preset or read each field below.</p>
+    </div>
+    <div class="lesson-body">
+      <div class="explain">
+        A cron expression has 5 fields separated by spaces: <strong>minute hour day-of-month month day-of-week</strong>. Each field is either a number, a range (<code>1-5</code>), a list (<code>1,15</code>), a step (<code>*/15</code>), or <code>*</code> meaning "every". Once you can read one cron line, you can read every cron line ever written.
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">Pick a preset · see what it actually means</div>
+        <div class="cron-frame">
+          <div class="cron-presets">
+            <button class="cron-preset active" data-c="*/5 * * * *" data-m="every 5 minutes" data-l="Every 5 minutes · 24/7" data-n="next: 09:05, 09:10, 09:15, 09:20, 09:25 …">*/5 * * * *</button>
+            <button class="cron-preset" data-c="30 9 * * 1-5" data-m="09:30 every weekday" data-l="Trading days at market open" data-n="next: tomorrow Tue 09:30, Wed 09:30, Thu 09:30 …">30 9 * * 1-5</button>
+            <button class="cron-preset" data-c="0 0 * * *" data-m="midnight every day" data-l="Daily cleanup, 00:00 sharp" data-n="next: tomorrow 00:00, day after 00:00 …">0 0 * * *</button>
+            <button class="cron-preset" data-c="0 6 * * 0" data-m="6 AM every Sunday" data-l="Weekly digest, Sunday morning" data-n="next: this Sunday 06:00, next Sunday 06:00 …">0 6 * * 0</button>
+            <button class="cron-preset" data-c="0 0 1 * *" data-m="midnight on the 1st" data-l="Monthly rollup, 1st of every month" data-n="next: Jun 1st 00:00, Jul 1st 00:00 …">0 0 1 * *</button>
+            <button class="cron-preset" data-c="*/15 9-15 * * 1-5" data-m="every 15 min, 9 AM–3 PM, weekdays" data-l="Intraday scraper during trading hours" data-n="next: 09:00, 09:15, 09:30, 09:45 … 15:45 (skips wknd)">*/15 9-15 * * 1-5</button>
+          </div>
+
+          <div class="cron-expression" id="cronFields">
+            <div class="cron-field"><div class="label">Minute</div><div class="value" id="f0">*/5</div><div class="range">0–59</div></div>
+            <div class="cron-field"><div class="label">Hour</div><div class="value" id="f1">*</div><div class="range">0–23</div></div>
+            <div class="cron-field"><div class="label">Day-mo</div><div class="value" id="f2">*</div><div class="range">1–31</div></div>
+            <div class="cron-field"><div class="label">Month</div><div class="value" id="f3">*</div><div class="range">1–12</div></div>
+            <div class="cron-field"><div class="label">Day-wk</div><div class="value" id="f4">*</div><div class="range">0–6 Sun</div></div>
+          </div>
+
+          <div class="cron-translation">
+            <div class="arrow">→</div>
+            <div class="meaning" id="cronMeaning">Runs <em>every 5 minutes</em></div>
+          </div>
+
+          <div class="cron-next">
+            <strong>Plain English</strong>
+            <span id="cronPlain">Every 5 minutes · 24/7</span><br>
+            <span class="upcoming" id="cronUpcoming">next: 09:05, 09:10, 09:15, 09:20, 09:25 …</span>
+          </div>
+        </div>
+
+        <div class="code-toggle">
+          <button class="code-toggle-btn" onclick="toggleCode(this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg> Show how to install a cron job</button>
+<pre class="code-block"><span class="com"># Edit your crontab (per-user schedule list)</span>
+<span class="var">$</span> crontab -e
+
+<span class="com"># Each line: schedule + command. Use absolute paths.</span>
+<span class="com"># Every weekday at 09:30, scrape and log the output:</span>
+30 9 * * 1-5  /usr/bin/python3 /home/aarav/scraper/run.py &gt;&gt; /home/aarav/scraper/cron.log 2&gt;&amp;1
+
+<span class="com"># Every 15 minutes, run a quick health check:</span>
+*/15 * * * *  /home/aarav/scraper/healthcheck.sh
+
+<span class="com"># Verify what's scheduled:</span>
+<span class="var">$</span> crontab -l
+
+<span class="com"># See logs of past cron runs (Ubuntu/Debian):</span>
+<span class="var">$</span> grep CRON /var/log/syslog
+
+<span class="com"># ─── On Windows: use Task Scheduler instead.       ──</span>
+<span class="com"># ─── On Mac/Linux servers: cron is built in.       ──</span>
+<span class="com"># ─── Cloud-native: GitHub Actions, Cloud Scheduler ──</span>
+<span class="com">    work even better — no server to maintain.</span></pre>
+        </div>
+
+        <div class="try-it">
+          <div class="try-it-label">→ Try this</div>
+          <h4>Use crontab.guru while you're learning</h4>
+          <p>The website <strong>crontab.guru</strong> shows the English meaning of any cron expression as you type. Use it for the first dozen schedules you write — eventually the patterns become obvious. The five most useful expressions you'll see in real codebases: <code>0 * * * *</code> (every hour), <code>0 0 * * *</code> (every midnight), <code>0 9 * * 1-5</code> (9 AM weekdays), <code>*/15 * * * *</code> (every 15 min), and <code>0 0 1 * *</code> (start of each month).</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+</main>
+
+<nav class="footer-nav">
+  <a class="footer-link prev" href="11-web-scraping.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+    <div>
+      <div class="footer-link-meta">Previous · Module 11</div>
+      <div class="footer-link-title">Web scraping with BeautifulSoup</div>
+    </div>
+  </a>
+  <a class="footer-link next" href="13-email-automation.html">
+    <div>
+      <div class="footer-link-meta">Next · Module 13</div>
+      <div class="footer-link-title">Email automation</div>
+    </div>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+  </a>
+</nav>
+
+<footer class="footer-base">
+  Foundations of Data Analysis · Module 12 of 14 · <span>MokshPath</span> · Built for learners of every background
+</footer>
+
+<script>
+function toggleCode(btn){
+  const block = btn.nextElementSibling;
+  block.classList.toggle('show');
+  btn.classList.toggle('open');
+}
+document.querySelectorAll('.code-toggle-btn').forEach((btn)=>{
+  const original = btn.textContent.trim();
+  btn.dataset.label = original;
+  btn.addEventListener('click', ()=>{
+    const block = btn.nextElementSibling;
+    setTimeout(()=>{
+      btn.innerHTML = (block.classList.contains('show')
+        ? '<svg viewBox="0 0 16 16" fill="currentColor" style="transform:rotate(90deg)"><path d="M6 4l4 4-4 4"/></svg> Hide ' + btn.dataset.label.replace(/^Show\s*/,'')
+        : '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg> ' + btn.dataset.label);
+    }, 0);
+  });
+});
+
+/* ============ Lesson 1 · CSV append ============ */
+const symbols = ['RELIANCE','TCS','HDFCBANK','INFY','ICICIBANK','SBIN','BHARTIARTL','ITC','LT','HINDUNILVR','KOTAKBANK','AXISBANK'];
+const basePrices = {RELIANCE:2812.40, TCS:3654.10, HDFCBANK:1684.25, INFY:1503.65, ICICIBANK:1078.55, SBIN:824.90, BHARTIARTL:1421.30, ITC:438.75, LT:3567.20, HINDUNILVR:2401.85, KOTAKBANK:1789.40, AXISBANK:1134.65};
+let csvRunCount = 0, csvRows = [], csvLastPrices = {...basePrices};
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function fmtDate(d){return d.toISOString().slice(0,10)}
+function csvRun(){
+  csvRunCount++;
+  const d = new Date(2026, 4, 24 + csvRunCount);
+  const dateStr = fmtDate(d);
+  const rng = mulberry32(csvRunCount * 9973);
+  const newRows = [];
+  for (let i=0; i<4; i++){
+    const sym = symbols[Math.floor(rng()*symbols.length)];
+    const pct = (rng()-0.5) * 0.04;
+    const newPrice = csvLastPrices[sym] * (1 + pct);
+    csvLastPrices[sym] = newPrice;
+    newRows.push({date:dateStr, symbol:sym, close:newPrice.toFixed(2), prevPrice:csvLastPrices[sym]/(1+pct)});
+  }
+  csvRows = csvRows.concat(newRows.map(r=>({...r, isNew:true})));
+  csvRows.forEach((r,i)=>{ if (i < csvRows.length - newRows.length) r.isNew = false; });
+  renderCsv();
+}
+function renderCsv(){
+  const out = document.getElementById('csvFile');
+  document.getElementById('csvRunCount').textContent = csvRunCount;
+  document.getElementById('csvRowCount').textContent = csvRows.length;
+  if (csvRows.length === 0){
+    out.innerHTML = '<span class="csv-empty">data/nse_prices.csv does not exist yet. Click ▶ Run scraper.</span>';
+    return;
+  }
+  let html = '<span class="filename">📄 data/nse_prices.csv</span>';
+  html += '<span class="header">date,symbol,close</span>';
+  csvRows.forEach(r=>{
+    const cls = r.isNew ? ' new' : '';
+    const upDown = r.prevPrice ? (parseFloat(r.close) > r.prevPrice ? 'price-up' : 'price-down') : '';
+    html += `<span class="row${cls}">${r.date},${r.symbol},<span class="${upDown}">${r.close}</span></span>`;
+  });
+  out.innerHTML = html;
+  out.scrollTop = out.scrollHeight;
+}
+document.getElementById('csvRun').addEventListener('click', csvRun);
+document.getElementById('csvClear').addEventListener('click', ()=>{
+  csvRunCount = 0; csvRows = []; csvLastPrices = {...basePrices};
+  renderCsv();
+});
+renderCsv();
+
+/* ============ Lesson 2 · Dedup ============ */
+const dedupSource = [
+  {symbol:'RELIANCE',  date:'2026-05-24', close:'2805.10', scraped_at:'05:45'},
+  {symbol:'TCS',       date:'2026-05-24', close:'3651.80', scraped_at:'05:45'},
+  {symbol:'RELIANCE',  date:'2026-05-24', close:'2805.10', scraped_at:'06:15'},  // exact dup
+  {symbol:'HDFCBANK',  date:'2026-05-24', close:'1681.00', scraped_at:'05:45'},
+  {symbol:'TCS',       date:'2026-05-24', close:'3654.10', scraped_at:'08:30'},  // dup symbol+date, diff value
+  {symbol:'INFY',      date:'2026-05-24', close:'1503.65', scraped_at:'05:45'},
+  {symbol:'RELIANCE',  date:'2026-05-25', close:'2812.40', scraped_at:'05:45'},  // new date
+  {symbol:'TCS',       date:'2026-05-25', close:'3654.10', scraped_at:'05:45'}   // new date
+];
+let dedupKey = 'symbol+date';
+function dedupTableHTML(rows, dupIdxs){
+  let html = '<thead><tr><th>symbol</th><th>date</th><th>close</th><th>scraped_at</th></tr></thead><tbody>';
+  rows.forEach((r,i)=>{
+    const cls = dupIdxs && dupIdxs.includes(i) ? ' class="dup"' : '';
+    html += `<tr${cls}><td>${r.symbol}</td><td>${r.date}</td><td>${r.close}</td><td>${r.scraped_at}</td></tr>`;
+  });
+  html += '</tbody>';
+  return html;
+}
+function markDuplicates(rows, key){
+  // Returns indices of rows that are duplicates (keeping the LAST one)
+  const seen = new Map();
+  const dups = [];
+  rows.forEach((r,i)=>{
+    let k;
+    if (key === 'symbol') k = r.symbol;
+    else if (key === 'symbol+date') k = r.symbol + '|' + r.date;
+    else k = JSON.stringify(r);
+    if (seen.has(k)) dups.push(seen.get(k));
+    seen.set(k, i);
+  });
+  return dups;
+}
+function dedup(rows, key){
+  const seen = new Map();
+  rows.forEach((r,i)=>{
+    let k;
+    if (key === 'symbol') k = r.symbol;
+    else if (key === 'symbol+date') k = r.symbol + '|' + r.date;
+    else k = JSON.stringify(r);
+    seen.set(k, r);
+  });
+  return Array.from(seen.values());
+}
+function renderDedup(after){
+  const dups = markDuplicates(dedupSource, dedupKey);
+  document.getElementById('beforeTable').innerHTML = dedupTableHTML(dedupSource, dups);
+  document.getElementById('beforeCount').textContent = `${dedupSource.length} rows`;
+  if (after){
+    const cleaned = dedup(dedupSource, dedupKey);
+    document.getElementById('afterTable').innerHTML = dedupTableHTML(cleaned);
+    document.getElementById('afterCount').textContent = `${cleaned.length} rows`;
+  } else {
+    document.getElementById('afterTable').innerHTML = '<tbody><tr><td colspan="4" style="color:var(--text-muted);font-style:italic;text-align:center;padding:1rem">Click drop_duplicates() to clean</td></tr></tbody>';
+    document.getElementById('afterCount').textContent = `— rows`;
+  }
+}
+document.querySelectorAll('.dedup-key').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.dedup-key').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    dedupKey = b.dataset.k;
+    renderDedup(false);
+  });
+});
+document.getElementById('dedupRun').addEventListener('click', ()=>{ renderDedup(true); });
+renderDedup(false);
+
+/* ============ Lesson 3 · Schedule simulator ============ */
+let schedMin = 9 * 60;   // 09:00
+let schedRunning = false;
+let schedInterval = null;
+let schedSpeed = 1;
+const schedCounts = {every5:0, weekday:0, daily:0};
+
+function fmtTime(min){
+  const h = Math.floor(min/60) % 24;
+  const m = min % 60;
+  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+}
+function schedLog(msg, fire){
+  const log = document.getElementById('schedLog');
+  const row = document.createElement('div');
+  row.className = 'sched-log-row' + (fire ? ' fire' : '');
+  row.innerHTML = `<span class="t">${fmtTime(schedMin)}</span><span class="m">${msg}</span>`;
+  log.appendChild(row);
+  log.scrollTop = log.scrollHeight;
+}
+function schedFire(job){
+  schedCounts[job]++;
+  document.getElementById('cnt' + job.charAt(0).toUpperCase() + job.slice(1)).textContent = schedCounts[job];
+  const el = document.querySelector(`.sched-job[data-job="${job}"]`);
+  el.classList.add('firing');
+  setTimeout(()=> el.classList.remove('firing'), 600);
+  const labels = {
+    every5: '📊 scrape_intraday() · pulled 12 symbols',
+    weekday: '📈 scrape_open_prices() · market open run',
+    daily: '🧹 dedupe_and_archive() · cleaned 1,247 rows'
+  };
+  schedLog(labels[job], true);
+}
+function schedTick(){
+  schedMin += 5;   // each tick = 5 simulated minutes
+  document.getElementById('schedTime').textContent = fmtTime(schedMin);
+  const hour = Math.floor(schedMin/60) % 24;
+  const min = schedMin % 60;
+  // Every 5 minutes
+  if (min % 5 === 0) schedFire('every5');
+  // At 09:30 weekday (we're simulating Monday)
+  if (hour === 9 && min === 30) schedFire('weekday');
+  // At 00:00 (when we wrap)
+  if (hour === 0 && min === 0 && schedMin > 0) schedFire('daily');
+  // End of day
+  if (schedMin >= 24 * 60 + 60){
+    schedStop();
+    schedLog('--- end of simulated day ---', false);
+  }
+}
+function schedStart(){
+  if (schedRunning) return;
+  schedRunning = true;
+  schedLog('▶ Scheduler started', false);
+  schedInterval = setInterval(schedTick, 600 / schedSpeed);
+}
+function schedStop(){
+  schedRunning = false;
+  if (schedInterval) clearInterval(schedInterval);
+  schedInterval = null;
+}
+function schedReset(){
+  schedStop();
+  schedMin = 9 * 60;
+  document.getElementById('schedTime').textContent = '09:00';
+  Object.keys(schedCounts).forEach(k=> schedCounts[k] = 0);
+  document.getElementById('cntEvery5').textContent = '0';
+  document.getElementById('cntWeekday').textContent = '0';
+  document.getElementById('cntDaily').textContent = '0';
+  document.getElementById('schedLog').innerHTML = '<div class="sched-log-row"><span class="t">--:--</span><span class="m">Press Start to begin the simulated day.</span></div>';
+}
+document.getElementById('schedStart').addEventListener('click', schedStart);
+document.getElementById('schedStop').addEventListener('click', schedStop);
+document.getElementById('schedReset').addEventListener('click', schedReset);
+document.querySelectorAll('.sched-speed button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.sched-speed button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    schedSpeed = parseInt(b.dataset.speed);
+    if (schedRunning){ schedStop(); schedStart(); }
+  });
+});
+
+/* ============ Lesson 4 · Cron decoder ============ */
+function applyCron(btn){
+  document.querySelectorAll('.cron-preset').forEach(x=>x.classList.remove('active'));
+  btn.classList.add('active');
+  const parts = btn.dataset.c.split(' ');
+  ['f0','f1','f2','f3','f4'].forEach((id,i)=> document.getElementById(id).textContent = parts[i]);
+  document.getElementById('cronMeaning').innerHTML = `Runs <em>${btn.dataset.m}</em>`;
+  document.getElementById('cronPlain').textContent = btn.dataset.l;
+  document.getElementById('cronUpcoming').textContent = btn.dataset.n;
+}
+document.querySelectorAll('.cron-preset').forEach(b=>{
+  b.addEventListener('click', ()=> applyCron(b));
+});
+</script>
+</body>
+</html>

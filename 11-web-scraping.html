@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Scraping with BeautifulSoup — MokshPath</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --orange:#E87A2E;--orange-dark:#D06A20;--orange-light:#F5943E;--orange-glow:rgba(232,122,46,0.12);
+  --navy:#2B2D42;--navy-dark:#1A1B2E;
+  --bg:#F3EDE7;--bg-card:#FFFFFF;--bg-light:#F9F5F0;
+  --text-primary:#2B2D42;--text-secondary:#6B6D7B;--text-muted:#9597A6;
+  --border:#E5DDD4;--green:#4CAF50;--green-light:#E8F5E9;--red:#E5484D;--red-light:#FDE8E8;
+  --blue:#3B7DD8;--blue-light:#E3EEFB;--purple:#7C5CD7;--purple-light:#EDE6FB;
+  --yellow:#E0A800;--yellow-light:#FFF8E1;
+  --code-bg:#1A1B2E;--code-text:#E5DDD4;
+  --shadow-sm:0 2px 8px rgba(43,45,66,0.06);--shadow-md:0 8px 24px rgba(43,45,66,0.08);
+  --radius:14px;--radius-sm:8px
+}
+html{scroll-behavior:smooth}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text-primary);-webkit-font-smoothing:antialiased;line-height:1.5}
+
+.header{background:var(--bg-card);border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm)}
+.header-left{display:flex;flex-direction:column;gap:.1rem}
+.header-crumb{font-size:.7rem;color:var(--text-muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.header-crumb span{color:var(--orange)}
+.header-title{font-family:'DM Serif Display',serif;font-size:1.3rem;color:var(--navy);line-height:1.1}
+.header-logo{width:54px;height:84px;flex-shrink:0}
+
+.hero{padding:3.5rem 2rem 2rem;max-width:1100px;margin:0 auto;text-align:center}
+.hero-badge{display:inline-flex;align-items:center;gap:.45rem;padding:.4rem 1rem;border-radius:50px;background:var(--orange-glow);color:var(--orange);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:1.2rem}
+.hero-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--orange);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:.7}}
+.hero h1{font-family:'DM Serif Display',serif;font-size:clamp(2rem,4.5vw,3.2rem);line-height:1.13;color:var(--navy);margin-bottom:1rem}
+.hero h1 em{font-style:normal;color:var(--orange)}
+.hero-sub{font-size:1.05rem;color:var(--text-secondary);line-height:1.7;max-width:680px;margin:0 auto 2rem}
+
+.case-study{max-width:1100px;margin:0 auto 3rem;padding:0 2rem}
+.case-study-card{background:linear-gradient(135deg,var(--navy-dark),var(--navy));border-radius:var(--radius);padding:2rem 2.5rem;color:#fff;display:flex;gap:1.5rem;align-items:center;position:relative;overflow:hidden}
+.case-study-card::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(232,122,46,0.12)}
+.case-study-icon{width:64px;height:64px;border-radius:16px;background:var(--orange);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.8rem;box-shadow:0 4px 20px rgba(232,122,46,0.4);position:relative;z-index:1}
+.case-study-content{position:relative;z-index:1}
+.case-study-label{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--orange-light);margin-bottom:.3rem}
+.case-study-content h2{font-family:'DM Serif Display',serif;font-size:1.5rem;margin-bottom:.4rem}
+.case-study-content h2 em{font-style:normal;color:var(--orange-light)}
+.case-study-content p{font-size:.92rem;color:rgba(255,255,255,0.75);line-height:1.6;max-width:760px}
+
+.lessons{max-width:1100px;margin:0 auto;padding:0 2rem 4rem}
+.lesson{background:var(--bg-card);border-radius:var(--radius);margin-bottom:2.5rem;overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow-sm)}
+.lesson-head{padding:1.8rem 2rem 1.3rem;border-bottom:1px solid var(--border);background:var(--bg-light)}
+.lesson-num{display:inline-flex;align-items:center;gap:.5rem;font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--orange);margin-bottom:.6rem}
+.lesson-num-circle{width:24px;height:24px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem}
+.lesson-head h2{font-family:'DM Serif Display',serif;font-size:1.6rem;color:var(--navy);margin-bottom:.4rem;line-height:1.2}
+.lesson-head .lesson-intro{font-size:.95rem;color:var(--text-secondary);line-height:1.65;max-width:780px}
+.lesson-body{padding:2rem}
+
+.explain{background:var(--bg-light);border-radius:var(--radius-sm);padding:1.2rem 1.4rem;margin-bottom:1.5rem;border-left:3px solid var(--orange);font-size:.9rem;color:var(--text-secondary);line-height:1.65}
+.explain strong{color:var(--navy);font-weight:600}
+.explain code{background:#fff;padding:.1rem .4rem;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.82em;color:var(--orange-dark);border:1px solid var(--border)}
+
+.demo{background:var(--bg-light);border-radius:var(--radius);padding:1.5rem;border:1px dashed var(--border)}
+.demo-title{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.demo-title::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--orange)}
+
+/* --- HTML structure split --- */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:760px){.split{grid-template-columns:1fr}}
+.split-panel{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.split-head{background:var(--navy-dark);color:#fff;padding:.5rem .9rem;font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.06em;display:flex;align-items:center;gap:.5rem}
+.split-head .dot-y{width:8px;height:8px;border-radius:50%;background:var(--orange)}
+.rendered{padding:1rem 1.1rem;font-size:.85rem;min-height:340px}
+.rendered .listing{padding:.65rem .8rem;border:1px solid var(--border);border-radius:6px;margin-bottom:.5rem;cursor:pointer;transition:all .15s;background:#fff}
+.rendered .listing:hover{border-color:var(--orange);background:#FFF8F0}
+.rendered .listing.hl{border-color:var(--orange);background:#FFF8F0;box-shadow:0 0 0 2px var(--orange-glow)}
+.rendered .listing h3{font-size:.92rem;color:var(--navy);margin-bottom:.2rem;font-family:'DM Serif Display',serif;cursor:pointer}
+.rendered .listing h3:hover,.rendered .listing h3.hl{color:var(--orange)}
+.rendered .listing .meta{font-size:.74rem;color:var(--text-muted);display:flex;gap:.8rem;flex-wrap:wrap}
+.rendered .listing .meta span{cursor:pointer;padding:.05rem .25rem;border-radius:3px}
+.rendered .listing .meta span:hover,.rendered .listing .meta span.hl{background:var(--orange-glow);color:var(--orange-dark)}
+.rendered .listing .price{color:var(--green);font-weight:700;font-family:'JetBrains Mono',monospace;cursor:pointer;padding:.05rem .25rem;border-radius:3px}
+.rendered .listing .price:hover,.rendered .listing .price.hl{background:var(--orange-glow);color:var(--orange-dark)}
+
+.html-view{background:#0F1020;color:#E5DDD4;padding:1rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.74rem;line-height:1.7;flex:1;overflow:auto;min-height:340px}
+.html-view .ln{display:block;white-space:pre;padding:.05rem .35rem;border-radius:3px}
+.html-view .ln.hl{background:rgba(232,122,46,0.32);outline:1px solid var(--orange)}
+.html-view .tag{color:#FF8B6B}.html-view .at{color:#A5D6FF}.html-view .av{color:#F5C518}.html-view .tx{color:#E5DDD4}
+
+/* --- Selectors lab --- */
+.sel-controls{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.9rem}
+.sel-chip{padding:.45rem .85rem;background:#fff;border:1.5px solid var(--border);border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--text-secondary);cursor:pointer;transition:all .15s}
+.sel-chip:hover{border-color:var(--orange);color:var(--orange)}
+.sel-chip.active{background:var(--orange);border-color:var(--orange);color:#fff}
+.sel-input-row{display:flex;gap:.5rem;align-items:center;margin-bottom:.9rem;flex-wrap:wrap}
+.sel-input-row label{font-size:.78rem;color:var(--text-secondary);font-weight:600}
+.sel-input{padding:.5rem .8rem;border:1.5px solid var(--border);border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--navy);background:#fff;min-width:240px;flex:1}
+.sel-input:focus{outline:none;border-color:var(--orange)}
+.sel-result{background:#fff;border:1px solid var(--border);border-radius:8px;padding:.9rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--navy);line-height:1.7;min-height:120px}
+.sel-result .hit{background:var(--orange-glow);padding:.15rem .35rem;border-radius:3px;margin:.1rem 0;display:block;border-left:2px solid var(--orange)}
+.sel-result .empty{color:var(--text-muted);font-style:italic;font-family:inherit;font-size:.85rem}
+.sel-count{background:var(--orange);color:#fff;font-size:.7rem;font-weight:700;padding:.15rem .55rem;border-radius:12px;display:inline-block;margin-bottom:.5rem;font-family:'JetBrains Mono',monospace}
+
+/* --- Tables lesson --- */
+.tbl-step{background:#fff;border:1px solid var(--border);border-radius:10px;padding:1.2rem 1.3rem;margin-bottom:.7rem}
+.tbl-html{background:#0F1020;color:#E5DDD4;border-radius:6px;padding:.9rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.72rem;line-height:1.7;margin-bottom:.7rem;overflow-x:auto;white-space:pre}
+.tbl-html .tag{color:#FF8B6B}.tbl-html .at{color:#A5D6FF}.tbl-html .av{color:#F5C518}
+.tbl-extract-btn{padding:.6rem 1.2rem;background:var(--orange);color:#fff;border:none;border-radius:7px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.78rem;cursor:pointer;transition:all .15s}
+.tbl-extract-btn:hover{background:var(--orange-dark)}
+.tbl-extract-btn:disabled{background:var(--text-muted);cursor:not-allowed}
+.tbl-out{margin-top:.9rem;background:var(--bg-light);border-radius:6px;padding:.9rem 1.1rem;display:none}
+.tbl-out.show{display:block;animation:slideDown .3s ease}
+.tbl-out-label{font-size:.72rem;color:var(--orange);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.5rem}
+.tbl-out table{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:.75rem;background:#fff;border-radius:5px;overflow:hidden}
+.tbl-out th{background:var(--navy-dark);color:#fff;padding:.4rem .6rem;text-align:left;font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.tbl-out td{padding:.35rem .6rem;border-bottom:1px solid #EEE}
+.tbl-out tr:last-child td{border-bottom:none}
+
+/* --- Dynamic page comparison --- */
+.dyn-split{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:.9rem}
+@media(max-width:760px){.dyn-split{grid-template-columns:1fr}}
+.dyn-card{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.dyn-head{padding:.65rem 1rem;font-weight:700;font-size:.78rem;letter-spacing:.04em;display:flex;align-items:center;gap:.5rem;border-bottom:1px solid var(--border)}
+.dyn-head.ok{background:var(--green-light);color:var(--green)}
+.dyn-head.warn{background:var(--red-light);color:var(--red)}
+.dyn-head .badge{font-family:'JetBrains Mono',monospace;font-size:.65rem;padding:.1rem .4rem;border-radius:3px;background:rgba(255,255,255,0.5)}
+.dyn-body{padding:1rem 1.1rem;font-size:.85rem;color:var(--text-secondary);line-height:1.6}
+.dyn-body strong{color:var(--navy)}
+.dyn-code{background:#0F1020;color:#E5DDD4;border-radius:6px;padding:.7rem .9rem;font-family:'JetBrains Mono',monospace;font-size:.7rem;line-height:1.7;margin-top:.5rem;white-space:pre;overflow-x:auto}
+.dyn-code .tag{color:#FF8B6B}.dyn-code .at{color:#A5D6FF}.dyn-code .av{color:#F5C518}.dyn-code .com{color:#7E8AA0;font-style:italic}.dyn-code .placeholder{color:var(--red)}
+.dyn-foot{background:linear-gradient(135deg,#FFF8F0,#FCF1E8);border:1px solid #F0DBC8;border-radius:8px;padding:.95rem 1.1rem;font-size:.85rem;color:var(--text-secondary);line-height:1.6}
+.dyn-foot strong{color:var(--orange-dark)}
+
+/* --- robots.txt reader --- */
+.robots-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:.9rem}
+@media(max-width:760px){.robots-grid{grid-template-columns:1fr}}
+.robots-file{background:#0F1020;color:#E5DDD4;border-radius:8px;padding:1rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.76rem;line-height:1.8;min-height:240px}
+.robots-file .com{color:#7E8AA0;font-style:italic}
+.robots-file .dir{color:#FF8B6B;font-weight:700}
+.robots-file .path{color:#F5C518}
+.robots-file .agent{color:#7FDBCA}
+.robots-test{background:#fff;border:1px solid var(--border);border-radius:8px;padding:1rem 1.1rem}
+.robots-test h4{font-family:'DM Serif Display',serif;font-size:1rem;color:var(--navy);margin-bottom:.6rem}
+.url-rows{display:flex;flex-direction:column;gap:.4rem}
+.url-row{display:flex;align-items:center;gap:.6rem;padding:.5rem .7rem;background:var(--bg-light);border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:.76rem;cursor:pointer;border:1px solid transparent;transition:all .15s}
+.url-row:hover{border-color:var(--border)}
+.url-row.test{background:#FFF8F0;border-color:var(--orange)}
+.url-row .verdict{font-size:.65rem;font-weight:700;padding:.15rem .5rem;border-radius:3px;letter-spacing:.04em;margin-left:auto;flex-shrink:0}
+.url-row .verdict.allow{background:var(--green-light);color:var(--green)}
+.url-row .verdict.deny{background:var(--red-light);color:var(--red)}
+.url-row .url-path{flex:1;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.code-toggle{margin-top:1.2rem}
+.code-toggle-btn{background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:.5rem 1rem;font-size:.78rem;font-weight:600;color:var(--text-secondary);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:.4rem;transition:all .2s}
+.code-toggle-btn:hover{border-color:var(--orange);color:var(--orange)}
+.code-toggle-btn svg{width:13px;height:13px;transition:transform .2s}
+.code-toggle-btn.open svg{transform:rotate(90deg)}
+.code-block{background:var(--code-bg);color:var(--code-text);border-radius:var(--radius-sm);padding:1.2rem 1.4rem;margin-top:.8rem;font-family:'JetBrains Mono',monospace;font-size:.82rem;line-height:1.65;overflow-x:auto;display:none;white-space:pre}
+.code-block.show{display:block;animation:slideDown .3s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.code-block .kw{color:#FF8B6B}.code-block .fn{color:#7FDBCA}.code-block .str{color:#F5C518}.code-block .num{color:#A5D6FF}.code-block .com{color:#7E8AA0;font-style:italic}.code-block .var{color:#F5943E}
+
+.try-it{background:linear-gradient(135deg,#FFF8F0,#FCF1E8);border:1px solid #F0DBC8;border-radius:var(--radius-sm);padding:1.3rem 1.5rem;margin-top:1.5rem}
+.try-it-label{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--orange);margin-bottom:.45rem;display:flex;align-items:center;gap:.4rem}
+.try-it h4{font-family:'DM Serif Display',serif;font-size:1.05rem;color:var(--navy);margin-bottom:.35rem}
+.try-it p{font-size:.85rem;color:var(--text-secondary);line-height:1.6}
+.try-it code{background:var(--bg-light);padding:.1rem .3rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85em}
+
+.footer-nav{max-width:1100px;margin:0 auto;padding:0 2rem 4rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.footer-link{flex:1;min-width:200px;background:var(--bg-card);padding:1.2rem 1.4rem;border-radius:var(--radius-sm);border:1px solid var(--border);text-decoration:none;color:var(--text-primary);display:flex;align-items:center;gap:.8rem;transition:all .25s}
+.footer-link:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--orange)}
+.footer-link.next{justify-content:flex-end;text-align:right}
+.footer-link-meta{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.2rem}
+.footer-link-title{font-family:'DM Serif Display',serif;font-size:1.05rem;color:var(--navy)}
+.footer-link svg{width:18px;height:18px;color:var(--orange);flex-shrink:0}
+
+.footer-base{background:var(--navy-dark);color:rgba(255,255,255,0.55);padding:1.5rem 2rem;text-align:center;font-size:.78rem}
+.footer-base span{color:var(--orange)}
+
+@media(max-width:680px){
+  .header{padding:.8rem 1rem}.header-logo{width:42px;height:64px}.header-title{font-size:1rem}
+  .hero{padding:2.5rem 1rem 1rem}.lessons,.case-study,.footer-nav{padding-left:1rem;padding-right:1rem}
+  .lesson-body{padding:1.2rem}.lesson-head{padding:1.3rem 1.3rem 1rem}
+  .case-study-card{flex-direction:column;text-align:center;padding:1.6rem;gap:1rem}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="header-crumb">Foundations · Module <span>11</span></div>
+    <div class="header-title">Web Scraping with BeautifulSoup</div>
+  </div>
+  <svg class="header-logo" viewBox="0 0 955 1486" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="MokshPath logo">
+    <path d="M493.477 314.275H460.795C456.99 314.275 453.906 317.356 453.906 321.155C453.906 324.955 456.99 328.035 460.795 328.035H493.477C497.282 328.035 500.366 324.955 500.366 321.155C500.366 317.356 497.282 314.275 493.477 314.275Z" fill="#EF7F1A"/>
+    <path d="M493.477 333.881H460.795C456.99 333.881 453.906 336.961 453.906 340.761C453.906 344.561 456.99 347.641 460.795 347.641H493.477C497.282 347.641 500.366 344.561 500.366 340.761C500.366 336.961 497.282 333.881 493.477 333.881Z" fill="#EF7F1A"/>
+    <path d="M493.477 353.486H460.795C456.99 353.486 453.906 356.567 453.906 360.366C453.906 364.166 456.99 367.246 460.795 367.246H493.477C497.282 367.246 500.366 364.166 500.366 360.366C500.366 356.567 497.282 353.486 493.477 353.486Z" fill="#EF7F1A"/>
+    <path d="M660.991 1316.23H299.4V1478.7H660.991V1316.23Z" fill="#2F1D19"/>
+    <path d="M660.991 1016.12H299.4V1178.6H660.991V1016.12Z" fill="#A34E1C"/>
+    <path d="M740.832 490.575C778.018 490.575 808.162 454.086 808.162 409.075C808.162 364.063 778.018 327.574 740.832 327.574C703.647 327.574 673.502 364.063 673.502 409.075C673.502 454.086 703.647 490.575 740.832 490.575Z" fill="#D9DADA"/>
+    <path d="M210.549 490.575C247.734 490.575 277.879 454.086 277.879 409.075C277.879 364.063 247.734 327.574 210.549 327.574C173.364 327.574 143.219 364.063 143.219 409.075C143.219 454.086 173.364 490.575 210.549 490.575Z" fill="#D9DADA"/>
+    <path d="M475.7 57.6211C652.854 57.6211 759.123 184.726 759.123 355.488C759.123 526.249 699.228 703.848 475.7 703.848C252.154 703.848 192.26 526.249 192.26 355.488C192.26 184.726 298.545 57.6211 475.7 57.6211Z" fill="#D1D0CC"/>
+    <path d="M690.083 149.617C734.816 202.179 759.123 273.834 759.123 355.488C759.123 526.249 699.228 703.848 475.7 703.848C252.154 703.848 192.26 526.249 192.26 355.488C192.26 280.244 212.891 213.495 251.129 162.352C239.864 193.872 233.642 228.349 233.642 264.467C233.642 414.579 340.834 536.283 473.05 536.283C605.283 536.283 712.475 414.579 712.475 264.467C712.475 223.426 704.441 184.504 690.083 149.617Z" fill="#828991"/>
+    <path d="M477.546 168.932C633.402 168.932 709.638 238.108 712.834 376.067C716.031 514.01 666.136 618.313 477.546 618.313C288.973 618.313 237.164 528.095 238.429 376.067C239.711 224.04 321.707 168.932 477.546 168.932Z" fill="#412C23"/>
+    <path d="M426.283 434.613C416.284 443.092 403.344 448.202 389.208 448.202C375.072 448.202 362.132 443.092 352.133 434.613H426.283Z" fill="#008DD2"/>
+    <path d="M602.086 434.613C592.087 443.092 579.147 448.202 565.011 448.202C550.892 448.202 537.953 443.092 527.953 434.613H602.086Z" fill="#008DD2"/>
+    <path d="M719.552 1228.71C719.552 1228.71 837.41 1213.98 906.244 1266.95C975.096 1319.91 968.395 1403.32 895.903 1446.99C823.41 1490.68 718.355 1492.15 622.633 1478.09C526.894 1464 529.099 1442.1 369.243 1471.32C178.893 1506.1 10.7125 1474.96 0.918093 1375.46C-8.87633 1275.94 61.3427 1243.69 132.946 1237.09C204.55 1230.47 403.361 1247.36 456.333 1262.23C509.322 1277.1 719.552 1228.71 719.552 1228.71Z" fill="#EF7F1A"/>
+    <path d="M475.307 739.607C516.775 739.607 553.765 753.949 583.422 778.306C563.029 805.536 522.433 824.099 475.683 824.099C428.694 824.099 387.943 805.365 367.637 777.93C397.208 753.795 434.044 739.607 475.307 739.607Z" fill="#A4ACAE"/>
+    <path d="M537.013 747.316L546.585 751.47C547.08 751.692 546.345 752.103 546.841 752.342L555.371 756.444C555.866 756.683 554.943 757.367 555.422 757.658C571.079 767.298 585.643 778.922 598.565 792.648C575.336 965.751 665.827 1157.67 475.306 1171.02C393.771 1176.75 322.339 1107.27 299.4 1026.88C295.947 1014.77 299.177 1004.35 297.536 991.271C291.263 985.305 289.297 976.673 289.109 970.725C289.075 969.545 299.912 968.434 300.545 968.588C297.622 956.247 289.981 941.564 293.109 917.172C395.874 896.455 497.681 831.569 537.013 747.316Z" fill="#EC691F"/>
+  </svg>
+</header>
+
+<section class="hero">
+  <div class="hero-badge"><span class="dot"></span>Module 11 · Scraping</div>
+  <h1>The web is a giant <em>spreadsheet in disguise.</em></h1>
+  <p class="hero-sub">When no friendly API exists, websites themselves become your data source. Web scraping is the art of reading the page like a computer would — finding the rows, picking the columns, and politely walking away. We'll keep it ethical, lean, and Python-light.</p>
+</section>
+
+<section class="case-study">
+  <div class="case-study-card">
+    <div class="case-study-icon">🏠</div>
+    <div class="case-study-content">
+      <div class="case-study-label">The Case · FlatFinder</div>
+      <h2>Tracking rental listings across <em>four city portals</em> every morning</h2>
+      <p>FlatFinder is a tiny startup helping families in Pune relocate. Each morning, an analyst manually copies 60+ listings from four property sites into a spreadsheet — locality, BHK, rent, and link. It takes two hours. We'll teach a Python script to do it in two minutes, ethically.</p>
+    </div>
+  </div>
+</section>
+
+<main class="lessons">
+
+  <!-- LESSON 1: HTML structure -->
+  <article class="lesson">
+    <div class="lesson-head">
+      <div class="lesson-num"><span class="lesson-num-circle">1</span>HTML structure · how a webpage is really built</div>
+      <h2>The same page, twice: what you see, and what the browser reads</h2>
+      <p class="lesson-intro">Behind every webpage is a tree of nested tags. The browser turns that tree into the rectangles, text, and images you see. To scrape, you need to see <em>both</em> at once. Click any item on the left and watch its HTML light up on the right.</p>
+    </div>
+    <div class="lesson-body">
+      <div class="explain">
+        Every HTML element is a <strong>tag</strong> (like <code>&lt;h2&gt;</code> or <code>&lt;span&gt;</code>) with optional <strong>attributes</strong> (like <code>class="price"</code>) and <strong>content</strong> (the text or other tags inside it). Tags nest inside other tags, forming a tree. Scraping = "find the tags I want, pull out their text".
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">Click any element in the rendered listings · see its HTML</div>
+        <div class="split">
+          <div class="split-panel">
+            <div class="split-head"><span class="dot-y"></span>What you see · rendered</div>
+            <div class="rendered" id="rendered">
+              <div class="listing" data-id="l1">
+                <h3 data-h="t1">Spacious 2 BHK in Kothrud</h3>
+                <div class="meta">
+                  <span data-h="loc1">📍 Kothrud, Pune</span>
+                  <span data-h="bhk1">🛏 2 BHK</span>
+                  <span class="price" data-h="p1">₹28,000/mo</span>
+                </div>
+              </div>
+              <div class="listing" data-id="l2">
+                <h3 data-h="t2">Modern 1 BHK near Koregaon Park</h3>
+                <div class="meta">
+                  <span data-h="loc2">📍 Koregaon Park, Pune</span>
+                  <span data-h="bhk2">🛏 1 BHK</span>
+                  <span class="price" data-h="p2">₹22,500/mo</span>
+                </div>
+              </div>
+              <div class="listing" data-id="l3">
+                <h3 data-h="t3">3 BHK Family Home in Baner</h3>
+                <div class="meta">
+                  <span data-h="loc3">📍 Baner, Pune</span>
+                  <span data-h="bhk3">🛏 3 BHK</span>
+                  <span class="price" data-h="p3">₹45,000/mo</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="split-panel">
+            <div class="split-head"><span class="dot-y"></span>What the browser reads · HTML</div>
+            <div class="html-view" id="htmlView"></div>
+          </div>
+        </div>
+
+        <div class="code-toggle">
+          <button class="code-toggle-btn" onclick="toggleCode(this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg> Show the fetch-and-parse code</button>
+<pre class="code-block"><span class="kw">import</span> requests
+<span class="kw">from</span> bs4 <span class="kw">import</span> BeautifulSoup
+
+url = <span class="str">"https://flatfinder.example/pune/rentals"</span>
+headers = {<span class="str">"User-Agent"</span>: <span class="str">"FlatFinder-Bot/1.0"</span>}
+
+r = requests.<span class="fn">get</span>(url, headers=headers, timeout=<span class="num">10</span>)
+r.<span class="fn">raise_for_status</span>()        <span class="com"># crash early if the page didn't load</span>
+
+soup = <span class="fn">BeautifulSoup</span>(r.text, <span class="str">"html.parser"</span>)
+<span class="fn">print</span>(soup.<span class="fn">prettify</span>()[:<span class="num">600</span>])      <span class="com"># inspect the first 600 chars</span>
+
+<span class="com"># Now soup is a tree we can navigate with .find(), .find_all(),</span>
+<span class="com"># .select() — exactly like CSS selectors in your browser dev tools.</span></pre>
+        </div>
+
+        <div class="try-it">
+          <div class="try-it-label">→ Try this</div>
+          <h4>Use the browser's "Inspect" tool first</h4>
+          <p>Before writing a single line of scraping code, open the actual page in Chrome or Firefox, right-click the data you want, and choose <strong>Inspect</strong>. The dev tools panel shows the exact HTML tag, class, and ID. That's the recipe your BeautifulSoup code will follow. Five minutes inspecting saves an hour debugging.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- LESSON 2: Selectors -->
+  <article class="lesson">
+    <div class="lesson-head">
+      <div class="lesson-num"><span class="lesson-num-circle">2</span>Tag and class selectors · saying "I want these"</div>
+      <h2>Five tiny patterns that cover 90% of scraping</h2>
+      <p class="lesson-intro">Selectors are sentences like "give me every span with class price". Pick a preset below, then try writing your own. The matches highlight live, exactly as BeautifulSoup would return them.</p>
+    </div>
+    <div class="lesson-body">
+      <div class="explain">
+        Five patterns to memorize: <strong>tag</strong> (<code>h3</code> matches every h3), <strong>class</strong> (<code>.price</code> matches every element with class="price"), <strong>id</strong> (<code>#top-result</code> matches that one element), <strong>tag.class</strong> (<code>span.price</code> = span elements with class price), and <strong>parent &gt; child</strong> (<code>.listing h3</code> = h3 inside .listing). These work in browser dev tools, in BeautifulSoup's <code>.select()</code>, and in CSS itself.
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">Pick a selector · see what matches in the 3 listings</div>
+        <div class="sel-controls">
+          <button class="sel-chip active" data-s="h3">h3</button>
+          <button class="sel-chip" data-s=".price">.price</button>
+          <button class="sel-chip" data-s=".meta span">.meta span</button>
+          <button class="sel-chip" data-s="span.price">span.price</button>
+          <button class="sel-chip" data-s=".listing h3">.listing h3</button>
+          <button class="sel-chip" data-s=".listing">.listing</button>
+        </div>
+        <div class="sel-input-row">
+          <label>Or write your own:</label>
+          <input type="text" class="sel-input" id="selInput" placeholder="e.g.  .listing .meta">
+        </div>
+        <div id="selCount" class="sel-count">3 matches</div>
+        <div class="sel-result" id="selResult"></div>
+
+        <div class="code-toggle">
+          <button class="code-toggle-btn" onclick="toggleCode(this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg> Show the BeautifulSoup equivalent</button>
+<pre class="code-block"><span class="kw">from</span> bs4 <span class="kw">import</span> BeautifulSoup
+
+soup = <span class="fn">BeautifulSoup</span>(html, <span class="str">"html.parser"</span>)
+
+<span class="com"># By tag — every h3 on the page</span>
+titles = soup.<span class="fn">find_all</span>(<span class="str">"h3"</span>)
+<span class="kw">for</span> t <span class="kw">in</span> titles: <span class="fn">print</span>(t.text.<span class="fn">strip</span>())
+
+<span class="com"># By class — every element with class="price"</span>
+prices = soup.<span class="fn">find_all</span>(class_=<span class="str">"price"</span>)
+
+<span class="com"># By tag + class — span elements with class="price"</span>
+prices = soup.<span class="fn">find_all</span>(<span class="str">"span"</span>, class_=<span class="str">"price"</span>)
+
+<span class="com"># CSS-style selectors with .select() — most flexible</span>
+listings   = soup.<span class="fn">select</span>(<span class="str">".listing"</span>)         <span class="com"># every listing card</span>
+titles     = soup.<span class="fn">select</span>(<span class="str">".listing h3"</span>)      <span class="com"># h3 inside .listing</span>
+first_meta = soup.<span class="fn">select_one</span>(<span class="str">".meta span"</span>)   <span class="com"># first match only</span>
+
+<span class="com"># Pull out the structured data row by row</span>
+rows = []
+<span class="kw">for</span> card <span class="kw">in</span> soup.<span class="fn">select</span>(<span class="str">".listing"</span>):
+    rows.<span class="fn">append</span>({
+        <span class="str">"title"</span>: card.<span class="fn">select_one</span>(<span class="str">"h3"</span>).text.<span class="fn">strip</span>(),
+        <span class="str">"price"</span>: card.<span class="fn">select_one</span>(<span class="str">".price"</span>).text.<span class="fn">strip</span>(),
+    })</pre>
+        </div>
+
+        <div class="try-it">
+          <div class="try-it-label">→ Try this</div>
+          <h4>The find_one-then-find_all pattern</h4>
+          <p>The cleanest scrapers follow one pattern: first <code>select</code> the outer container (the listing card), then for each card pull out the specific fields with smaller selectors. Don't try to grab all the prices and all the titles separately — if the third listing is missing a price, your two lists go out of sync and every row after that is wrong. Group by container first.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- LESSON 3: Tables -->
+  <article class="lesson">
+    <div class="lesson-head">
+      <div class="lesson-num"><span class="lesson-num-circle">3</span>Extracting tables · the one-line shortcut</div>
+      <h2>Why scraping tabular pages can be embarrassingly easy</h2>
+      <p class="lesson-intro">When a page already contains a real HTML <code>&lt;table&gt;</code>, you don't need BeautifulSoup at all. Pandas has a one-liner that reads every table on a page directly into a DataFrame. Below is FlatFinder's "neighborhood averages" page — click extract.</p>
+    </div>
+    <div class="lesson-body">
+      <div class="explain">
+        Pandas's <code>pd.read_html(url)</code> finds every <code>&lt;table&gt;</code> on a page and returns a list of DataFrames. Index <code>[0]</code> usually gives you the main one. This works for stock screeners, Wikipedia tables, government data dashboards, NSE/BSE pages, RBI reports — anywhere the data is already in an HTML table.
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">The HTML table on the page · click "Extract" to see the DataFrame</div>
+        <div class="tbl-step">
+          <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.5rem;letter-spacing:.04em;text-transform:uppercase;font-weight:700">Raw HTML in the page source</div>
+<pre class="tbl-html"><span class="tag">&lt;table</span> <span class="at">class</span>=<span class="av">"neighborhood-rates"</span><span class="tag">&gt;</span>
+  <span class="tag">&lt;thead&gt;&lt;tr&gt;
+    &lt;th&gt;</span>Locality<span class="tag">&lt;/th&gt;
+    &lt;th&gt;</span>1 BHK avg<span class="tag">&lt;/th&gt;
+    &lt;th&gt;</span>2 BHK avg<span class="tag">&lt;/th&gt;
+    &lt;th&gt;</span>3 BHK avg<span class="tag">&lt;/th&gt;
+  &lt;/tr&gt;&lt;/thead&gt;</span>
+  <span class="tag">&lt;tbody&gt;
+    &lt;tr&gt;&lt;td&gt;</span>Kothrud<span class="tag">&lt;/td&gt;&lt;td&gt;</span>18,500<span class="tag">&lt;/td&gt;&lt;td&gt;</span>28,000<span class="tag">&lt;/td&gt;&lt;td&gt;</span>42,000<span class="tag">&lt;/td&gt;&lt;/tr&gt;</span>
+    <span class="tag">&lt;tr&gt;&lt;td&gt;</span>Koregaon Park<span class="tag">&lt;/td&gt;&lt;td&gt;</span>22,500<span class="tag">&lt;/td&gt;&lt;td&gt;</span>35,000<span class="tag">&lt;/td&gt;&lt;td&gt;</span>58,000<span class="tag">&lt;/td&gt;&lt;/tr&gt;</span>
+    <span class="tag">&lt;tr&gt;&lt;td&gt;</span>Baner<span class="tag">&lt;/td&gt;&lt;td&gt;</span>19,000<span class="tag">&lt;/td&gt;&lt;td&gt;</span>30,000<span class="tag">&lt;/td&gt;&lt;td&gt;</span>45,000<span class="tag">&lt;/td&gt;&lt;/tr&gt;</span>
+    <span class="tag">&lt;tr&gt;&lt;td&gt;</span>Hinjewadi<span class="tag">&lt;/td&gt;&lt;td&gt;</span>15,500<span class="tag">&lt;/td&gt;&lt;td&gt;</span>24,000<span class="tag">&lt;/td&gt;&lt;td&gt;</span>36,000<span class="tag">&lt;/td&gt;&lt;/tr&gt;</span>
+    <span class="tag">&lt;tr&gt;&lt;td&gt;</span>Viman Nagar<span class="tag">&lt;/td&gt;&lt;td&gt;</span>17,000<span class="tag">&lt;/td&gt;&lt;td&gt;</span>26,500<span class="tag">&lt;/td&gt;&lt;td&gt;</span>40,000<span class="tag">&lt;/td&gt;&lt;/tr&gt;</span>
+  <span class="tag">&lt;/tbody&gt;
+&lt;/table&gt;</span></pre>
+          <button class="tbl-extract-btn" id="tblExtract">▶ Run pd.read_html(url)[0]</button>
+          <div class="tbl-out" id="tblOut">
+            <div class="tbl-out-label">DataFrame · 5 rows × 4 columns</div>
+            <table>
+              <thead><tr><th>Locality</th><th>1 BHK avg</th><th>2 BHK avg</th><th>3 BHK avg</th></tr></thead>
+              <tbody>
+                <tr><td>Kothrud</td><td>18500</td><td>28000</td><td>42000</td></tr>
+                <tr><td>Koregaon Park</td><td>22500</td><td>35000</td><td>58000</td></tr>
+                <tr><td>Baner</td><td>19000</td><td>30000</td><td>45000</td></tr>
+                <tr><td>Hinjewadi</td><td>15500</td><td>24000</td><td>36000</td></tr>
+                <tr><td>Viman Nagar</td><td>17000</td><td>26500</td><td>40000</td></tr>
+              </tbody>
+            </table>
+            <div style="margin-top:.7rem;font-size:.8rem;color:var(--text-secondary);line-height:1.5">Pandas auto-detected the header row, converted the comma-formatted numbers to integers, and built a clean DataFrame in one line.</div>
+          </div>
+        </div>
+
+        <div class="code-toggle">
+          <button class="code-toggle-btn" onclick="toggleCode(this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg> Show the full pandas + BeautifulSoup code</button>
+<pre class="code-block"><span class="kw">import</span> pandas <span class="kw">as</span> pd
+
+<span class="com"># ─── Easiest path: pandas reads every table on the page ────</span>
+url = <span class="str">"https://flatfinder.example/pune/neighborhood-rates"</span>
+tables = pd.<span class="fn">read_html</span>(url, header=<span class="num">0</span>, thousands=<span class="str">","</span>)
+<span class="fn">print</span>(<span class="str">f"Found {len(tables)} tables on the page"</span>)
+
+df = tables[<span class="num">0</span>]
+<span class="fn">print</span>(df)
+<span class="fn">print</span>(df.dtypes)             <span class="com"># numeric columns now actually numeric</span>
+
+<span class="com"># ─── If pandas can't parse it (no &lt;table&gt; tag) ──────────</span>
+<span class="kw">import</span> requests
+<span class="kw">from</span> bs4 <span class="kw">import</span> BeautifulSoup
+
+soup = <span class="fn">BeautifulSoup</span>(requests.<span class="fn">get</span>(url).text, <span class="str">"html.parser"</span>)
+table = soup.<span class="fn">find</span>(<span class="str">"table"</span>, class_=<span class="str">"neighborhood-rates"</span>)
+
+rows = []
+<span class="kw">for</span> tr <span class="kw">in</span> table.<span class="fn">find_all</span>(<span class="str">"tr"</span>)[<span class="num">1</span>:]:    <span class="com"># skip header row</span>
+    cells = [td.text.<span class="fn">strip</span>() <span class="kw">for</span> td <span class="kw">in</span> tr.<span class="fn">find_all</span>(<span class="str">"td"</span>)]
+    rows.<span class="fn">append</span>(cells)
+
+df = pd.<span class="fn">DataFrame</span>(rows, columns=[<span class="str">"locality"</span>,<span class="str">"bhk1"</span>,<span class="str">"bhk2"</span>,<span class="str">"bhk3"</span>])</pre>
+        </div>
+
+        <div class="try-it">
+          <div class="try-it-label">→ Try this</div>
+          <h4>Always try pandas first</h4>
+          <p>If your target page has data in a real HTML table, <code>pd.read_html()</code> will save you hours. Try it before writing a single BeautifulSoup line. If it returns garbage or fails, <em>then</em> drop down to manual parsing. Many financial dashboards, government statistics pages, and Wikipedia articles work with pandas straight out of the box.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- LESSON 4: Dynamic pages -->
+  <article class="lesson">
+    <div class="lesson-head">
+      <div class="lesson-num"><span class="lesson-num-circle">4</span>Dynamic pages · when requests returns nothing</div>
+      <h2>Why some pages look full in the browser but empty to your code</h2>
+      <p class="lesson-intro">Modern sites often render content with JavaScript <em>after</em> the page loads. The browser sees the final result; your Python <code>requests</code> only sees the initial blank shell. Here's what each one sees, side by side.</p>
+    </div>
+    <div class="lesson-body">
+      <div class="explain">
+        Two kinds of pages: <strong>server-rendered</strong> (the HTML arrives already filled in — old-school news sites, most government pages, Wikipedia) and <strong>client-rendered</strong> (the HTML arrives nearly empty and JavaScript builds it in your browser — most modern apps like Zomato, Swiggy, Instagram). The second kind needs a real browser to scrape, which means a tool like <strong>Selenium</strong> or <strong>Playwright</strong> instead of plain requests.
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">Same URL · what requests sees vs what your browser shows</div>
+        <div class="dyn-split">
+          <div class="dyn-card">
+            <div class="dyn-head ok">✓ Server-rendered page <span class="badge">requests works</span></div>
+            <div class="dyn-body">
+              <strong>What requests.get(url).text returns:</strong>
+              <div class="dyn-code"><span class="tag">&lt;div</span> <span class="at">class</span>=<span class="av">"listing"</span><span class="tag">&gt;</span>
+  <span class="tag">&lt;h3&gt;</span>2 BHK Kothrud<span class="tag">&lt;/h3&gt;</span>
+  <span class="tag">&lt;span</span> <span class="at">class</span>=<span class="av">"price"</span><span class="tag">&gt;</span>₹28,000<span class="tag">&lt;/span&gt;</span>
+<span class="tag">&lt;/div&gt;</span>
+<span class="tag">&lt;div</span> <span class="at">class</span>=<span class="av">"listing"</span><span class="tag">&gt;</span>
+  <span class="tag">&lt;h3&gt;</span>1 BHK Koregaon<span class="tag">&lt;/h3&gt;</span> ...
+<span class="com">&lt;!-- All the data is right here in the HTML --&gt;</span></div>
+              <div style="margin-top:.6rem;font-size:.82rem">BeautifulSoup can read it. You're done.</div>
+            </div>
+          </div>
+          <div class="dyn-card">
+            <div class="dyn-head warn">⚠ Client-rendered page <span class="badge">requests fails</span></div>
+            <div class="dyn-body">
+              <strong>What requests.get(url).text returns:</strong>
+              <div class="dyn-code"><span class="tag">&lt;div</span> <span class="at">id</span>=<span class="av">"root"</span><span class="tag">&gt;&lt;/div&gt;</span>
+<span class="tag">&lt;script</span> <span class="at">src</span>=<span class="av">"/static/app.bundle.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
+<span class="com">&lt;!-- Listings? Nowhere. JavaScript will add them --&gt;</span>
+<span class="com">&lt;!-- AFTER the page loads in a browser.       --&gt;</span>
+<span class="placeholder">// requests.get() never runs that JS</span>
+<span class="placeholder">// → you get an empty &lt;div id="root"&gt;</span></div>
+              <div style="margin-top:.6rem;font-size:.82rem">You'll need a real browser to see the data.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dyn-foot">
+          <strong>How to tell which kind you're dealing with:</strong> in your browser, right-click → "View Page Source" (NOT "Inspect"). If you can find the listing text in the raw source, requests + BeautifulSoup will work. If the source is mostly JavaScript and the data is missing, you need Selenium or Playwright — or look for a hidden JSON API the JavaScript itself is calling (often the cleaner option).
+        </div>
+
+        <div class="code-toggle">
+          <button class="code-toggle-btn" onclick="toggleCode(this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg> Show the Selenium fallback pattern</button>
+<pre class="code-block"><span class="com"># For JavaScript-rendered pages: spin up a real headless Chrome</span>
+<span class="kw">from</span> selenium <span class="kw">import</span> webdriver
+<span class="kw">from</span> selenium.webdriver.chrome.options <span class="kw">import</span> Options
+<span class="kw">from</span> selenium.webdriver.support.ui <span class="kw">import</span> WebDriverWait
+<span class="kw">from</span> selenium.webdriver.support <span class="kw">import</span> expected_conditions <span class="kw">as</span> EC
+<span class="kw">from</span> selenium.webdriver.common.by <span class="kw">import</span> By
+
+opts = <span class="fn">Options</span>()
+opts.<span class="fn">add_argument</span>(<span class="str">"--headless=new"</span>)        <span class="com"># run invisibly</span>
+driver = webdriver.<span class="fn">Chrome</span>(options=opts)
+
+driver.<span class="fn">get</span>(<span class="str">"https://flatfinder.example/pune"</span>)
+
+<span class="com"># Wait for the listings to actually appear in the DOM</span>
+<span class="fn">WebDriverWait</span>(driver, <span class="num">10</span>).<span class="fn">until</span>(
+    EC.<span class="fn">presence_of_element_located</span>((By.CLASS_NAME, <span class="str">"listing"</span>))
+)
+
+<span class="com"># Now you can hand the rendered HTML to BeautifulSoup</span>
+<span class="kw">from</span> bs4 <span class="kw">import</span> BeautifulSoup
+soup = <span class="fn">BeautifulSoup</span>(driver.page_source, <span class="str">"html.parser"</span>)
+listings = soup.<span class="fn">select</span>(<span class="str">".listing"</span>)
+
+driver.<span class="fn">quit</span>()
+
+<span class="com"># ─── BETTER: check the Network tab in dev tools first.        ─</span>
+<span class="com"># If the JS itself calls /api/listings?city=pune and gets JSON, </span>
+<span class="com"># skip Selenium entirely and just requests.get() that endpoint.</span></pre>
+        </div>
+
+        <div class="try-it">
+          <div class="try-it-label">→ Try this</div>
+          <h4>Hunt for the hidden API before reaching for Selenium</h4>
+          <p>JavaScript-heavy sites usually fetch their data from an internal JSON API — and that API is right there in the browser's Network tab (F12 → Network → filter "XHR/Fetch"). Reload the page, click the requests, peek at the JSON responses. Nine times out of ten, you'll find a clean endpoint you can call directly with <code>requests</code>. Five seconds of network-tab sleuthing beats an hour wrestling with Selenium.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- LESSON 5: robots.txt -->
+  <article class="lesson">
+    <div class="lesson-head">
+      <div class="lesson-num"><span class="lesson-num-circle">5</span>robots.txt and ethics · scraping like a good citizen</div>
+      <h2>The polite handshake every site offers — and most scrapers ignore</h2>
+      <p class="lesson-intro">Every website can publish a <code>robots.txt</code> file telling bots which pages are open and which are off-limits. It's not enforceable code; it's an honor system — and a strong legal hint. Click each URL below to see whether FlatFinder's robots.txt would say "yes".</p>
+    </div>
+    <div class="lesson-body">
+      <div class="explain">
+        <code>robots.txt</code> lives at the root of any domain — e.g. <code>flatfinder.example/robots.txt</code>. It uses two main rules: <strong>User-agent</strong> (which bots this section applies to) and <strong>Allow / Disallow</strong> (which URL paths are OK). The <code>*</code> wildcard means "all bots". Ignoring it can get your IP banned, your account closed, and in some jurisdictions can be argued in court — be a good citizen.
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">FlatFinder's robots.txt · click a URL to test it</div>
+        <div class="robots-grid">
+          <div class="robots-file">
+<span class="com"># flatfinder.example/robots.txt</span>
+<span class="dir">User-agent:</span> <span class="agent">*</span>
+<span class="dir">Disallow:</span> <span class="path">/admin/</span>
+<span class="dir">Disallow:</span> <span class="path">/users/</span>
+<span class="dir">Disallow:</span> <span class="path">/api/internal/</span>
+<span class="dir">Disallow:</span> <span class="path">/checkout</span>
+<span class="dir">Allow:</span> <span class="path">/pune/</span>
+<span class="dir">Allow:</span> <span class="path">/mumbai/</span>
+<span class="dir">Allow:</span> <span class="path">/neighborhood-rates</span>
+
+<span class="dir">Crawl-delay:</span> <span class="path">2</span>     <span class="com"># wait 2s between requests</span>
+
+<span class="com"># Sitemap helps you find every</span>
+<span class="com"># scrapable page on the site:</span>
+<span class="dir">Sitemap:</span> <span class="path">/sitemap.xml</span>
+          </div>
+          <div class="robots-test">
+            <h4>Click a URL to check</h4>
+            <div class="url-rows" id="urlRows">
+              <div class="url-row" data-path="/pune/rentals">
+                <span class="url-path">/pune/rentals</span>
+                <span class="verdict allow">ALLOW</span>
+              </div>
+              <div class="url-row" data-path="/mumbai/rentals/3bhk">
+                <span class="url-path">/mumbai/rentals/3bhk</span>
+                <span class="verdict allow">ALLOW</span>
+              </div>
+              <div class="url-row" data-path="/neighborhood-rates">
+                <span class="url-path">/neighborhood-rates</span>
+                <span class="verdict allow">ALLOW</span>
+              </div>
+              <div class="url-row" data-path="/users/profile/9234">
+                <span class="url-path">/users/profile/9234</span>
+                <span class="verdict deny">DISALLOW</span>
+              </div>
+              <div class="url-row" data-path="/admin/dashboard">
+                <span class="url-path">/admin/dashboard</span>
+                <span class="verdict deny">DISALLOW</span>
+              </div>
+              <div class="url-row" data-path="/checkout">
+                <span class="url-path">/checkout</span>
+                <span class="verdict deny">DISALLOW</span>
+              </div>
+              <div class="url-row" data-path="/api/internal/listings">
+                <span class="url-path">/api/internal/listings</span>
+                <span class="verdict deny">DISALLOW</span>
+              </div>
+            </div>
+            <div style="margin-top:.9rem;font-size:.82rem;color:var(--text-secondary);line-height:1.55"><strong style="color:var(--navy)">Also note:</strong> <code style="font-family:'JetBrains Mono';font-size:.85em;background:var(--bg-light);padding:.05rem .3rem;border-radius:3px">Crawl-delay: 2</code> means wait 2 seconds between requests. Bake that into your loop.</div>
+          </div>
+        </div>
+
+        <div class="code-toggle">
+          <button class="code-toggle-btn" onclick="toggleCode(this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg> Show the polite scraper checklist in code</button>
+<pre class="code-block"><span class="kw">import</span> requests, time
+<span class="kw">from</span> urllib.robotparser <span class="kw">import</span> RobotFileParser
+
+<span class="com"># 1. Read and respect robots.txt</span>
+rp = <span class="fn">RobotFileParser</span>()
+rp.<span class="fn">set_url</span>(<span class="str">"https://flatfinder.example/robots.txt"</span>)
+rp.<span class="fn">read</span>()
+
+url = <span class="str">"https://flatfinder.example/pune/rentals"</span>
+<span class="kw">if not</span> rp.<span class="fn">can_fetch</span>(<span class="str">"*"</span>, url):
+    <span class="kw">raise</span> <span class="fn">RuntimeError</span>(<span class="str">f"robots.txt forbids scraping {url}"</span>)
+
+<span class="com"># 2. Identify yourself honestly in the User-Agent</span>
+headers = {
+    <span class="str">"User-Agent"</span>: <span class="str">"FlatFinder-Aggregator/1.0 (contact: ops@flatfinder.example)"</span>
+}
+
+<span class="com"># 3. Pace yourself — respect Crawl-delay (or use a safe 2s default)</span>
+CRAWL_DELAY = rp.<span class="fn">crawl_delay</span>(<span class="str">"*"</span>) <span class="kw">or</span> <span class="num">2</span>
+
+<span class="com"># 4. Cache aggressively — re-running shouldn't re-hit the site</span>
+<span class="kw">for</span> page_url <span class="kw">in</span> urls_to_scrape:
+    <span class="kw">if</span> page_url <span class="kw">in</span> already_cached:
+        <span class="kw">continue</span>
+    r = requests.<span class="fn">get</span>(page_url, headers=headers, timeout=<span class="num">10</span>)
+    save_to_cache(page_url, r.text)
+    time.<span class="fn">sleep</span>(CRAWL_DELAY)     <span class="com"># breathe</span>
+
+<span class="com"># 5. Stop at the first sign of trouble</span>
+<span class="kw">if</span> r.status_code == <span class="num">429</span>:        <span class="com"># they're telling you to slow down</span>
+    <span class="kw">raise</span> <span class="fn">RuntimeError</span>(<span class="str">"Site is rate-limiting us. Halt and rethink."</span>)</pre>
+        </div>
+
+        <div class="try-it">
+          <div class="try-it-label">→ Try this</div>
+          <h4>The grandma test</h4>
+          <p>Before you scrape, ask: "Would I be comfortable telling the site owner what I'm doing and why?" If yes — proceed politely. If no — that's your signal to stop. Personal-data pages (user profiles, account dashboards) are almost never OK to scrape, even when technically reachable. Public listing pages with a clear commercial purpose, scraped slowly, with a real User-Agent, and respecting robots.txt — that's the bright line.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+</main>
+
+<nav class="footer-nav">
+  <a class="footer-link prev" href="10-rest-api-fundamentals.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+    <div>
+      <div class="footer-link-meta">Previous · Module 10</div>
+      <div class="footer-link-title">REST API fundamentals</div>
+    </div>
+  </a>
+  <a class="footer-link next" href="12-storing-data.html">
+    <div>
+      <div class="footer-link-meta">Next · Module 12</div>
+      <div class="footer-link-title">Storing scraped and API data</div>
+    </div>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+  </a>
+</nav>
+
+<footer class="footer-base">
+  Foundations of Data Analysis · Module 11 of 14 · <span>MokshPath</span> · Built for learners of every background
+</footer>
+
+<script>
+function toggleCode(btn){
+  const block = btn.nextElementSibling;
+  block.classList.toggle('show');
+  btn.classList.toggle('open');
+}
+document.querySelectorAll('.code-toggle-btn').forEach((btn)=>{
+  const original = btn.textContent.trim();
+  btn.dataset.label = original;
+  btn.addEventListener('click', ()=>{
+    const block = btn.nextElementSibling;
+    setTimeout(()=>{
+      btn.innerHTML = (block.classList.contains('show')
+        ? '<svg viewBox="0 0 16 16" fill="currentColor" style="transform:rotate(90deg)"><path d="M6 4l4 4-4 4"/></svg> Hide ' + btn.dataset.label.replace(/^Show\s*/,'')
+        : '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg> ' + btn.dataset.label);
+    }, 0);
+  });
+});
+
+/* ============ Lesson 1 · HTML linking ============ */
+const htmlLines = [
+'<span class="tag">&lt;div</span> <span class="at">class</span>=<span class="av">"listings"</span><span class="tag">&gt;</span>',
+'  <span class="tag">&lt;div</span> <span class="at">class</span>=<span class="av">"listing"</span> <span class="at">id</span>=<span class="av">"l1"</span><span class="tag">&gt;</span>',
+'    <span class="tag">&lt;h3&gt;</span><span class="tx">Spacious 2 BHK in Kothrud</span><span class="tag">&lt;/h3&gt;</span>',
+'    <span class="tag">&lt;div</span> <span class="at">class</span>=<span class="av">"meta"</span><span class="tag">&gt;</span>',
+'      <span class="tag">&lt;span&gt;</span><span class="tx">📍 Kothrud, Pune</span><span class="tag">&lt;/span&gt;</span>',
+'      <span class="tag">&lt;span&gt;</span><span class="tx">🛏 2 BHK</span><span class="tag">&lt;/span&gt;</span>',
+'      <span class="tag">&lt;span</span> <span class="at">class</span>=<span class="av">"price"</span><span class="tag">&gt;</span><span class="tx">₹28,000/mo</span><span class="tag">&lt;/span&gt;</span>',
+'    <span class="tag">&lt;/div&gt;</span>',
+'  <span class="tag">&lt;/div&gt;</span>',
+'  <span class="tag">&lt;div</span> <span class="at">class</span>=<span class="av">"listing"</span> <span class="at">id</span>=<span class="av">"l2"</span><span class="tag">&gt;</span>',
+'    <span class="tag">&lt;h3&gt;</span><span class="tx">Modern 1 BHK near Koregaon Park</span><span class="tag">&lt;/h3&gt;</span>',
+'    <span class="tag">&lt;div</span> <span class="at">class</span>=<span class="av">"meta"</span><span class="tag">&gt;</span>',
+'      <span class="tag">&lt;span&gt;</span><span class="tx">📍 Koregaon Park, Pune</span><span class="tag">&lt;/span&gt;</span>',
+'      <span class="tag">&lt;span&gt;</span><span class="tx">🛏 1 BHK</span><span class="tag">&lt;/span&gt;</span>',
+'      <span class="tag">&lt;span</span> <span class="at">class</span>=<span class="av">"price"</span><span class="tag">&gt;</span><span class="tx">₹22,500/mo</span><span class="tag">&lt;/span&gt;</span>',
+'    <span class="tag">&lt;/div&gt;</span>',
+'  <span class="tag">&lt;/div&gt;</span>',
+'  <span class="tag">&lt;div</span> <span class="at">class</span>=<span class="av">"listing"</span> <span class="at">id</span>=<span class="av">"l3"</span><span class="tag">&gt;</span>',
+'    <span class="tag">&lt;h3&gt;</span><span class="tx">3 BHK Family Home in Baner</span><span class="tag">&lt;/h3&gt;</span>',
+'    <span class="tag">&lt;div</span> <span class="at">class</span>=<span class="av">"meta"</span><span class="tag">&gt;</span>',
+'      <span class="tag">&lt;span&gt;</span><span class="tx">📍 Baner, Pune</span><span class="tag">&lt;/span&gt;</span>',
+'      <span class="tag">&lt;span&gt;</span><span class="tx">🛏 3 BHK</span><span class="tag">&lt;/span&gt;</span>',
+'      <span class="tag">&lt;span</span> <span class="at">class</span>=<span class="av">"price"</span><span class="tag">&gt;</span><span class="tx">₹45,000/mo</span><span class="tag">&lt;/span&gt;</span>',
+'    <span class="tag">&lt;/div&gt;</span>',
+'  <span class="tag">&lt;/div&gt;</span>',
+'<span class="tag">&lt;/div&gt;</span>'
+];
+const hMap = { l1:[1,2,3,4,5,6,7,8], l2:[9,10,11,12,13,14,15,16], l3:[17,18,19,20,21,22,23,24],
+  t1:[2], t2:[10], t3:[18], loc1:[4], loc2:[12], loc3:[20], bhk1:[5], bhk2:[13], bhk3:[21],
+  p1:[6], p2:[14], p3:[22] };
+
+document.getElementById('htmlView').innerHTML = htmlLines.map((l,i)=>`<span class="ln" data-i="${i}">${l}</span>`).join('');
+
+function highlightLines(idxs){
+  document.querySelectorAll('#htmlView .ln').forEach(l => l.classList.remove('hl'));
+  idxs.forEach(i => {
+    const el = document.querySelector(`#htmlView .ln[data-i="${i}"]`);
+    if (el) el.classList.add('hl');
+  });
+  if (idxs.length){
+    const el = document.querySelector(`#htmlView .ln[data-i="${idxs[0]}"]`);
+    if (el) el.scrollIntoView({block:'nearest', behavior:'smooth'});
+  }
+}
+document.querySelectorAll('#rendered [data-id], #rendered [data-h]').forEach(el=>{
+  el.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    document.querySelectorAll('#rendered .listing, #rendered [data-h]').forEach(x=>x.classList.remove('hl'));
+    const key = el.dataset.id || el.dataset.h;
+    el.classList.add('hl');
+    highlightLines(hMap[key] || []);
+  });
+});
+
+/* ============ Lesson 2 · Selectors ============ */
+const sampleData = [
+  { type:'listing', cls:['listing'], h3:'Spacious 2 BHK in Kothrud', meta:['Kothrud, Pune','2 BHK'], price:'₹28,000/mo' },
+  { type:'listing', cls:['listing'], h3:'Modern 1 BHK near Koregaon Park', meta:['Koregaon Park, Pune','1 BHK'], price:'₹22,500/mo' },
+  { type:'listing', cls:['listing'], h3:'3 BHK Family Home in Baner', meta:['Baner, Pune','3 BHK'], price:'₹45,000/mo' }
+];
+function runSelector(sel){
+  sel = sel.trim();
+  const hits = [];
+  if (sel === 'h3'){
+    sampleData.forEach((d,i)=> hits.push({tag:'h3', text:d.h3}));
+  } else if (sel === '.price' || sel === 'span.price'){
+    sampleData.forEach(d=> hits.push({tag:'span.price', text:d.price}));
+  } else if (sel === '.meta span'){
+    sampleData.forEach(d=> { d.meta.forEach(m=>hits.push({tag:'span (in .meta)', text:m})); hits.push({tag:'span.price (in .meta)', text:d.price}); });
+  } else if (sel === '.listing h3'){
+    sampleData.forEach(d=> hits.push({tag:'h3 (inside .listing)', text:d.h3}));
+  } else if (sel === '.listing'){
+    sampleData.forEach((d,i)=> hits.push({tag:'div.listing', text:`[card #${i+1}: ${d.h3} · ${d.price}]`}));
+  } else if (sel === '.meta'){
+    sampleData.forEach((d,i)=> hits.push({tag:'div.meta', text:`[${d.meta.join(' · ')} · ${d.price}]`}));
+  } else if (sel === 'span'){
+    sampleData.forEach(d=> { d.meta.forEach(m=>hits.push({tag:'span', text:m})); hits.push({tag:'span.price', text:d.price}); });
+  } else if (sel === 'div' || sel === '.listings div'){
+    hits.push({tag:'div.listings', text:'(outer container)'});
+    sampleData.forEach((d,i)=> hits.push({tag:'div.listing', text:`[card #${i+1}]`}));
+    sampleData.forEach(d=> hits.push({tag:'div.meta', text:`[${d.meta.join(' · ')}]`}));
+  } else if (sel && sel.length > 0){
+    // unrecognized
+  }
+  return hits;
+}
+function renderSelector(sel){
+  const hits = runSelector(sel);
+  document.getElementById('selCount').textContent = `${hits.length} match${hits.length===1?'':'es'}`;
+  const out = document.getElementById('selResult');
+  if (!sel.trim()){ out.innerHTML = '<span class="empty">Pick a selector above, or type one in the box.</span>'; return; }
+  if (hits.length === 0){ out.innerHTML = `<span class="empty">No matches for <code>${sel}</code>. Try one of the presets above.</span>`; return; }
+  out.innerHTML = hits.map(h => `<span class="hit"><span style="color:#9597A6">[${h.tag}]</span> ${h.text}</span>`).join('');
+}
+document.querySelectorAll('.sel-chip').forEach(c=>{
+  c.addEventListener('click', ()=>{
+    document.querySelectorAll('.sel-chip').forEach(x=>x.classList.remove('active'));
+    c.classList.add('active');
+    document.getElementById('selInput').value = '';
+    renderSelector(c.dataset.s);
+  });
+});
+document.getElementById('selInput').addEventListener('input', e=>{
+  document.querySelectorAll('.sel-chip').forEach(x=>x.classList.remove('active'));
+  renderSelector(e.target.value);
+});
+renderSelector('h3');
+
+/* ============ Lesson 3 · Table extract ============ */
+document.getElementById('tblExtract').addEventListener('click', ()=>{
+  document.getElementById('tblOut').classList.add('show');
+  document.getElementById('tblExtract').textContent = '✓ Extracted · 5 rows × 4 columns';
+  document.getElementById('tblExtract').disabled = true;
+});
+
+/* ============ Lesson 5 · robots.txt ============ */
+document.querySelectorAll('.url-row').forEach(r=>{
+  r.addEventListener('click', ()=>{
+    document.querySelectorAll('.url-row').forEach(x=>x.classList.remove('test'));
+    r.classList.add('test');
+  });
+});
+</script>
+</body>
+</html>

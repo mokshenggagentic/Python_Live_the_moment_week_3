@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REST API Fundamentals · HTTP, JSON, Auth, Pagination, Rate Limits — MokshPath</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --orange:#E87A2E;--orange-dark:#D06A20;--orange-light:#F5943E;--orange-glow:rgba(232,122,46,0.12);
+  --navy:#2B2D42;--navy-dark:#1A1B2E;
+  --bg:#F3EDE7;--bg-card:#FFFFFF;--bg-light:#F9F5F0;
+  --text-primary:#2B2D42;--text-secondary:#6B6D7B;--text-muted:#9597A6;
+  --border:#E5DDD4;--green:#4CAF50;--green-light:#E8F5E9;--red:#E5484D;--red-light:#FDE8E8;
+  --blue:#3B7DD8;--blue-light:#E3EEFB;--purple:#7C5CD7;--purple-light:#EDE6FB;
+  --yellow:#E0A800;--yellow-light:#FFF8E1;
+  --code-bg:#1A1B2E;--code-text:#E5DDD4;
+  --shadow-sm:0 2px 8px rgba(43,45,66,0.06);--shadow-md:0 8px 24px rgba(43,45,66,0.08);
+  --radius:14px;--radius-sm:8px
+}
+html{scroll-behavior:smooth}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text-primary);-webkit-font-smoothing:antialiased;line-height:1.5}
+
+.header{background:var(--bg-card);border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm)}
+.header-left{display:flex;flex-direction:column;gap:.1rem}
+.header-crumb{font-size:.7rem;color:var(--text-muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.header-crumb span{color:var(--orange)}
+.header-title{font-family:'DM Serif Display',serif;font-size:1.3rem;color:var(--navy);line-height:1.1}
+.header-logo{width:54px;height:84px;flex-shrink:0}
+
+.hero{padding:3.5rem 2rem 2rem;max-width:1100px;margin:0 auto;text-align:center}
+.hero-badge{display:inline-flex;align-items:center;gap:.45rem;padding:.4rem 1rem;border-radius:50px;background:var(--orange-glow);color:var(--orange);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:1.2rem}
+.hero-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--orange);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:.7}}
+.hero h1{font-family:'DM Serif Display',serif;font-size:clamp(2rem,4.5vw,3.2rem);line-height:1.13;color:var(--navy);margin-bottom:1rem}
+.hero h1 em{font-style:normal;color:var(--orange)}
+.hero-sub{font-size:1.05rem;color:var(--text-secondary);line-height:1.7;max-width:680px;margin:0 auto 2rem}
+
+.case-study{max-width:1100px;margin:0 auto 3rem;padding:0 2rem}
+.case-study-card{background:linear-gradient(135deg,var(--navy-dark),var(--navy));border-radius:var(--radius);padding:2rem 2.5rem;color:#fff;display:flex;gap:1.5rem;align-items:center;position:relative;overflow:hidden}
+.case-study-card::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(232,122,46,0.12)}
+.case-study-icon{width:64px;height:64px;border-radius:16px;background:var(--orange);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.8rem;box-shadow:0 4px 20px rgba(232,122,46,0.4);position:relative;z-index:1}
+.case-study-content{position:relative;z-index:1}
+.case-study-label{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--orange-light);margin-bottom:.3rem}
+.case-study-content h2{font-family:'DM Serif Display',serif;font-size:1.5rem;margin-bottom:.4rem}
+.case-study-content h2 em{font-style:normal;color:var(--orange-light)}
+.case-study-content p{font-size:.92rem;color:rgba(255,255,255,0.75);line-height:1.6;max-width:760px}
+
+.lessons{max-width:1100px;margin:0 auto;padding:0 2rem 4rem}
+.lesson{background:var(--bg-card);border-radius:var(--radius);margin-bottom:2.5rem;overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow-sm)}
+.lesson-head{padding:1.8rem 2rem 1.3rem;border-bottom:1px solid var(--border);background:var(--bg-light)}
+.lesson-num{display:inline-flex;align-items:center;gap:.5rem;font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--orange);margin-bottom:.6rem}
+.lesson-num-circle{width:24px;height:24px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem}
+.lesson-head h2{font-family:'DM Serif Display',serif;font-size:1.6rem;color:var(--navy);margin-bottom:.4rem;line-height:1.2}
+.lesson-head .lesson-intro{font-size:.95rem;color:var(--text-secondary);line-height:1.65;max-width:780px}
+.lesson-body{padding:2rem}
+
+.explain{background:var(--bg-light);border-radius:var(--radius-sm);padding:1.2rem 1.4rem;margin-bottom:1.5rem;border-left:3px solid var(--orange);font-size:.9rem;color:var(--text-secondary);line-height:1.65}
+.explain strong{color:var(--navy);font-weight:600}
+.explain code{background:#fff;padding:.1rem .4rem;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.82em;color:var(--orange-dark);border:1px solid var(--border)}
+
+.demo{background:var(--bg-light);border-radius:var(--radius);padding:1.5rem;border:1px dashed var(--border)}
+.demo-title{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.demo-title::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--orange)}
+
+.http-grid{display:grid;grid-template-columns:280px 1fr;gap:1rem}
+@media(max-width:760px){.http-grid{grid-template-columns:1fr}}
+.method-list{display:flex;flex-direction:column;gap:.55rem}
+.method-btn{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:.9rem 1rem;cursor:pointer;text-align:left;transition:all .2s;display:flex;flex-direction:column;gap:.2rem;font-family:inherit}
+.method-btn:hover{border-color:var(--orange);transform:translateX(2px)}
+.method-btn.active{background:var(--navy-dark);border-color:var(--navy-dark);color:#fff}
+.method-btn .verb{font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:700;letter-spacing:.05em;display:inline-flex;align-items:center;gap:.4rem}
+.method-btn .verb::before{content:'';width:8px;height:8px;border-radius:50%}
+.method-btn[data-m="GET"] .verb::before{background:var(--blue)}
+.method-btn[data-m="POST"] .verb::before{background:var(--green)}
+.method-btn[data-m="PUT"] .verb::before{background:var(--yellow)}
+.method-btn[data-m="DELETE"] .verb::before{background:var(--red)}
+.method-btn .desc{font-size:.72rem;color:var(--text-muted)}
+.method-btn.active .desc{color:rgba(255,255,255,0.7)}
+.http-panel{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.http-bar{background:var(--navy-dark);color:#fff;padding:.6rem 1rem;display:flex;align-items:center;gap:.6rem;font-family:'JetBrains Mono',monospace;font-size:.78rem}
+.http-bar .verb-tag{padding:.2rem .55rem;border-radius:4px;font-size:.72rem;font-weight:700;color:#fff}
+.http-bar .url{color:rgba(255,255,255,0.85);font-size:.76rem;overflow-wrap:anywhere}
+.http-body{padding:1.1rem 1.3rem}
+.http-desc{font-size:.9rem;color:var(--text-secondary);line-height:1.6;margin-bottom:.9rem}
+.http-desc strong{color:var(--navy)}
+.http-flow{background:var(--bg-light);border-radius:8px;padding:.85rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-secondary);line-height:1.7}
+.http-flow .arrow{color:var(--orange);font-weight:700}
+.http-flow .label{color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;font-size:.65rem;margin-top:.3rem;display:block}
+.http-resp{background:#0F1020;color:#E5DDD4;border-radius:8px;padding:.8rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.74rem;line-height:1.6;margin-top:.8rem;white-space:pre;overflow-x:auto}
+.http-resp .ok{color:#7FDBCA}.http-resp .key{color:#A5D6FF}.http-resp .val{color:#F5C518}.http-resp .com{color:#7E8AA0}
+
+.json-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:1rem}
+@media(max-width:760px){.json-grid{grid-template-columns:1fr}}
+.json-tree{background:#0F1020;color:#E5DDD4;border-radius:8px;padding:1rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.7;overflow-x:auto;min-height:340px;max-height:480px;overflow-y:auto}
+.json-tree .row{cursor:pointer;padding:.05rem .35rem;border-radius:3px;transition:background .15s;display:block;white-space:pre}
+.json-tree .row:hover{background:rgba(232,122,46,0.18)}
+.json-tree .row.highlight{background:rgba(232,122,46,0.32);outline:1px solid var(--orange)}
+.json-tree .k{color:#A5D6FF}.json-tree .s{color:#F5C518}.json-tree .n{color:#7FDBCA}.json-tree .b{color:#FF8B6B}.json-tree .br{color:#9597A6}
+.json-side{background:#fff;border:1px solid var(--border);border-radius:10px;padding:1.1rem 1.2rem;min-height:340px}
+.json-side h4{font-family:'DM Serif Display',serif;font-size:1rem;color:var(--navy);margin-bottom:.5rem}
+.json-empty{color:var(--text-muted);font-size:.85rem;font-style:italic;padding:1rem 0}
+.json-path{font-family:'JetBrains Mono',monospace;font-size:.78rem;background:var(--bg-light);padding:.55rem .75rem;border-radius:5px;color:var(--orange-dark);margin-bottom:.7rem;border:1px solid var(--border);word-break:break-all}
+.json-val{font-family:'JetBrains Mono',monospace;font-size:.82rem;background:var(--navy-dark);color:#7FDBCA;padding:.6rem .8rem;border-radius:5px;margin-bottom:.7rem;word-break:break-all;white-space:pre-wrap;max-height:160px;overflow-y:auto}
+.json-note{font-size:.82rem;color:var(--text-secondary);line-height:1.55}
+.json-note strong{color:var(--navy)}
+.json-note code{font-family:'JetBrains Mono',monospace;background:var(--bg-light);padding:.05rem .3rem;border-radius:3px;color:var(--orange-dark);font-size:.85em}
+
+.auth-tabs{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap}
+.auth-tab{padding:.6rem 1rem;background:#fff;border:1.5px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:600;cursor:pointer;color:var(--text-secondary);transition:all .2s;display:inline-flex;align-items:center;gap:.5rem}
+.auth-tab:hover{border-color:var(--orange);color:var(--orange)}
+.auth-tab.active{background:var(--navy-dark);border-color:var(--navy-dark);color:#fff}
+.auth-tab .pill{font-family:'JetBrains Mono',monospace;font-size:.65rem;font-weight:700;padding:.1rem .4rem;border-radius:3px;background:var(--red-light);color:var(--red)}
+.auth-tab.active .pill{background:rgba(255,255,255,0.18);color:#fff}
+.auth-tab[data-a="apikey"] .pill,.auth-tab[data-a="bearer"] .pill{background:var(--green-light);color:var(--green)}
+.auth-tab.active[data-a="apikey"] .pill,.auth-tab.active[data-a="bearer"] .pill{background:rgba(255,255,255,0.18);color:#fff}
+.auth-panel{display:none}
+.auth-panel.show{display:block}
+.auth-req{background:#0F1020;color:#E5DDD4;border-radius:8px;padding:1rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.7;margin-bottom:.7rem;overflow-x:auto;white-space:pre}
+.auth-req .h{color:#A5D6FF}.auth-req .v{color:#F5C518}.auth-req .c{color:#7E8AA0}.auth-req .err{color:#FF8B6B}.auth-req .ok{color:#7FDBCA}
+.auth-status{display:flex;align-items:center;gap:.6rem;padding:.7rem 1rem;border-radius:6px;font-size:.85rem;margin-bottom:.7rem}
+.auth-status.fail{background:var(--red-light);color:var(--red)}
+.auth-status.pass{background:var(--green-light);color:var(--green);font-weight:600}
+.auth-status strong{font-family:'JetBrains Mono',monospace;font-size:.85rem}
+.auth-note{background:var(--bg-light);padding:.7rem 1rem;border-radius:5px;border-left:2px solid var(--orange);font-size:.85rem;color:var(--text-secondary);line-height:1.55}
+.auth-note strong{color:var(--navy)}
+.auth-note code{font-family:'JetBrains Mono',monospace;background:#fff;padding:.05rem .3rem;border-radius:3px;color:var(--orange-dark);font-size:.85em}
+
+.pag-controls{display:flex;align-items:center;gap:.5rem;margin-bottom:.9rem;flex-wrap:wrap}
+.pag-btn{padding:.5rem .9rem;background:#fff;border:1.5px solid var(--border);border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:600;cursor:pointer;color:var(--text-secondary);transition:all .2s}
+.pag-btn:hover:not(:disabled){border-color:var(--orange);color:var(--orange)}
+.pag-btn:disabled{opacity:0.4;cursor:not-allowed}
+.pag-btn.primary{background:var(--orange);border-color:var(--orange);color:#fff}
+.pag-btn.primary:hover:not(:disabled){background:var(--orange-dark);border-color:var(--orange-dark)}
+.pag-info{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text-secondary);margin-left:auto;background:#fff;padding:.45rem .8rem;border-radius:6px;border:1px solid var(--border)}
+.pag-url{background:#0F1020;color:#7FDBCA;border-radius:6px;padding:.55rem .85rem;font-family:'JetBrains Mono',monospace;font-size:.75rem;margin-bottom:.7rem;overflow-x:auto;white-space:nowrap}
+.pag-url .q{color:#F5C518}
+.pag-table{width:100%;background:#fff;border:1px solid var(--border);border-radius:6px;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:.74rem;overflow:hidden}
+.pag-table th{background:#F2F2F2;color:var(--navy);padding:.5rem .7rem;font-weight:700;text-transform:uppercase;font-size:.65rem;letter-spacing:.05em;border-bottom:1px solid var(--border);text-align:left}
+.pag-table td{padding:.4rem .7rem;border-bottom:1px solid #EEE}
+.pag-table tr:last-child td{border-bottom:none}
+.pag-table .status-Delivered{color:var(--green);font-weight:700}
+.pag-table .status-Transit{color:var(--blue);font-weight:700}
+.pag-table .status-Pending{color:var(--yellow);font-weight:700}
+.pag-table .status-Failed{color:var(--red);font-weight:700}
+.pag-wrap{overflow-x:auto;margin-bottom:.7rem}
+
+.rl-frame{background:#fff;border:1px solid var(--border);border-radius:10px;padding:1.2rem 1.3rem}
+.rl-controls{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;margin-bottom:1rem}
+.rl-bigbtn{padding:.7rem 1.4rem;background:var(--orange);color:#fff;border:none;border-radius:8px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.9rem;cursor:pointer;transition:all .15s;letter-spacing:.04em}
+.rl-bigbtn:hover{background:var(--orange-dark);transform:translateY(-1px)}
+.rl-bigbtn:disabled{background:var(--text-muted);cursor:not-allowed;transform:none}
+.rl-quota{flex:1;min-width:200px;background:var(--bg-light);height:34px;border-radius:17px;position:relative;overflow:hidden;border:1px solid var(--border)}
+.rl-quota-fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--green),var(--yellow) 70%,var(--red));transition:width .4s;border-radius:17px}
+.rl-quota-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;color:var(--navy)}
+.rl-log{background:#0F1020;color:#E5DDD4;border-radius:8px;padding:.9rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.74rem;line-height:1.7;max-height:240px;overflow-y:auto;margin-bottom:.8rem}
+.rl-log-row{padding:.1rem 0;display:flex;gap:.7rem;align-items:baseline}
+.rl-log-row .t{color:#9597A6;flex-shrink:0;font-size:.7rem}
+.rl-log-row.ok .s{color:#7FDBCA}
+.rl-log-row.warn .s{color:#F5C518}
+.rl-log-row.fail .s{color:#FF8B6B}
+.rl-log-row .m{color:#E5DDD4;flex:1}
+.rl-headers{background:var(--bg-light);border-radius:6px;padding:.7rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--text-secondary);line-height:1.7}
+.rl-headers .hk{color:var(--orange-dark);font-weight:700}
+.rl-headers .hv{color:var(--navy)}
+
+.code-toggle{margin-top:1.2rem}
+.code-toggle-btn{background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:.5rem 1rem;font-size:.78rem;font-weight:600;color:var(--text-secondary);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:.4rem;transition:all .2s}
+.code-toggle-btn:hover{border-color:var(--orange);color:var(--orange)}
+.code-toggle-btn svg{width:13px;height:13px;transition:transform .2s}
+.code-toggle-btn.open svg{transform:rotate(90deg)}
+.code-block{background:var(--code-bg);color:var(--code-text);border-radius:var(--radius-sm);padding:1.2rem 1.4rem;margin-top:.8rem;font-family:'JetBrains Mono',monospace;font-size:.82rem;line-height:1.65;overflow-x:auto;display:none;white-space:pre}
+.code-block.show{display:block;animation:slideDown .3s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.code-block .kw{color:#FF8B6B}.code-block .fn{color:#7FDBCA}.code-block .str{color:#F5C518}.code-block .num{color:#A5D6FF}.code-block .com{color:#7E8AA0;font-style:italic}.code-block .var{color:#F5943E}
+
+.try-it{background:linear-gradient(135deg,#FFF8F0,#FCF1E8);border:1px solid #F0DBC8;border-radius:var(--radius-sm);padding:1.3rem 1.5rem;margin-top:1.5rem}
+.try-it-label{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--orange);margin-bottom:.45rem;display:flex;align-items:center;gap:.4rem}
+.try-it h4{font-family:'DM Serif Display',serif;font-size:1.05rem;color:var(--navy);margin-bottom:.35rem}
+.try-it p{font-size:.85rem;color:var(--text-secondary);line-height:1.6}
+.try-it code{background:var(--bg-light);padding:.1rem .3rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85em}
+
+.footer-nav{max-width:1100px;margin:0 auto;padding:0 2rem 4rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.footer-link{flex:1;min-width:200px;background:var(--bg-card);padding:1.2rem 1.4rem;border-radius:var(--radius-sm);border:1px solid var(--border);text-decoration:none;color:var(--text-primary);display:flex;align-items:center;gap:.8rem;transition:all .25s}
+.footer-link:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--orange)}
+.footer-link.next{justify-content:flex-end;text-align:right}
+.footer-link-meta{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.2rem}
+.footer-link-title{font-family:'DM Serif Display',serif;font-size:1.05rem;color:var(--navy)}
+.footer-link svg{width:18px;height:18px;color:var(--orange);flex-shrink:0}
+
+.footer-base{background:var(--navy-dark);color:rgba(255,255,255,0.55);padding:1.5rem 2rem;text-align:center;font-size:.78rem}
+.footer-base span{color:var(--orange)}
+
+@media(max-width:680px){
+  .header{padding:.8rem 1rem}.header-logo{width:42px;height:64px}.header-title{font-size:1rem}
+  .hero{padding:2.5rem 1rem 1rem}.lessons,.case-study,.footer-nav{padding-left:1rem;padding-right:1rem}
+  .lesson-body{padding:1.2rem}.lesson-head{padding:1.3rem 1.3rem 1rem}
+  .case-study-card{flex-direction:column;text-align:center;padding:1.6rem;gap:1rem}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="header-crumb">Foundations · Module <span>10</span></div>
+    <div class="header-title">REST API Fundamentals</div>
+  </div>
+  <svg class="header-logo" viewBox="0 0 955 1486" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="MokshPath logo">
+    <path d="M493.477 314.275H460.795C456.99 314.275 453.906 317.356 453.906 321.155C453.906 324.955 456.99 328.035 460.795 328.035H493.477C497.282 328.035 500.366 324.955 500.366 321.155C500.366 317.356 497.282 314.275 493.477 314.275Z" fill="#EF7F1A"/>
+    <path d="M493.477 333.881H460.795C456.99 333.881 453.906 336.961 453.906 340.761C453.906 344.561 456.99 347.641 460.795 347.641H493.477C497.282 347.641 500.366 344.561 500.366 340.761C500.366 336.961 497.282 333.881 493.477 333.881Z" fill="#EF7F1A"/>
+    <path d="M493.477 353.486H460.795C456.99 353.486 453.906 356.567 453.906 360.366C453.906 364.166 456.99 367.246 460.795 367.246H493.477C497.282 367.246 500.366 364.166 500.366 360.366C500.366 356.567 497.282 353.486 493.477 353.486Z" fill="#EF7F1A"/>
+    <path d="M660.991 1316.23H299.4V1478.7H660.991V1316.23Z" fill="#2F1D19"/>
+    <path d="M660.991 1016.12H299.4V1178.6H660.991V1016.12Z" fill="#A34E1C"/>
+    <path d="M740.832 490.575C778.018 490.575 808.162 454.086 808.162 409.075C808.162 364.063 778.018 327.574 740.832 327.574C703.647 327.574 673.502 364.063 673.502 409.075C673.502 454.086 703.647 490.575 740.832 490.575Z" fill="#D9DADA"/>
+    <path d="M210.549 490.575C247.734 490.575 277.879 454.086 277.879 409.075C277.879 364.063 247.734 327.574 210.549 327.574C173.364 327.574 143.219 364.063 143.219 409.075C143.219 454.086 173.364 490.575 210.549 490.575Z" fill="#D9DADA"/>
+    <path d="M475.7 57.6211C652.854 57.6211 759.123 184.726 759.123 355.488C759.123 526.249 699.228 703.848 475.7 703.848C252.154 703.848 192.26 526.249 192.26 355.488C192.26 184.726 298.545 57.6211 475.7 57.6211Z" fill="#D1D0CC"/>
+    <path d="M690.083 149.617C734.816 202.179 759.123 273.834 759.123 355.488C759.123 526.249 699.228 703.848 475.7 703.848C252.154 703.848 192.26 526.249 192.26 355.488C192.26 280.244 212.891 213.495 251.129 162.352C239.864 193.872 233.642 228.349 233.642 264.467C233.642 414.579 340.834 536.283 473.05 536.283C605.283 536.283 712.475 414.579 712.475 264.467C712.475 223.426 704.441 184.504 690.083 149.617Z" fill="#828991"/>
+    <path d="M477.546 168.932C633.402 168.932 709.638 238.108 712.834 376.067C716.031 514.01 666.136 618.313 477.546 618.313C288.973 618.313 237.164 528.095 238.429 376.067C239.711 224.04 321.707 168.932 477.546 168.932Z" fill="#412C23"/>
+    <path d="M426.283 434.613C416.284 443.092 403.344 448.202 389.208 448.202C375.072 448.202 362.132 443.092 352.133 434.613H426.283Z" fill="#008DD2"/>
+    <path d="M602.086 434.613C592.087 443.092 579.147 448.202 565.011 448.202C550.892 448.202 537.953 443.092 527.953 434.613H602.086Z" fill="#008DD2"/>
+    <path d="M719.552 1228.71C719.552 1228.71 837.41 1213.98 906.244 1266.95C975.096 1319.91 968.395 1403.32 895.903 1446.99C823.41 1490.68 718.355 1492.15 622.633 1478.09C526.894 1464 529.099 1442.1 369.243 1471.32C178.893 1506.1 10.7125 1474.96 0.918093 1375.46C-8.87633 1275.94 61.3427 1243.69 132.946 1237.09C204.55 1230.47 403.361 1247.36 456.333 1262.23C509.322 1277.1 719.552 1228.71 719.552 1228.71Z" fill="#EF7F1A"/>
+    <path d="M475.307 739.607C516.775 739.607 553.765 753.949 583.422 778.306C563.029 805.536 522.433 824.099 475.683 824.099C428.694 824.099 387.943 805.365 367.637 777.93C397.208 753.795 434.044 739.607 475.307 739.607Z" fill="#A4ACAE"/>
+    <path d="M537.013 747.316L546.585 751.47C547.08 751.692 546.345 752.103 546.841 752.342L555.371 756.444C555.866 756.683 554.943 757.367 555.422 757.658C571.079 767.298 585.643 778.922 598.565 792.648C575.336 965.751 665.827 1157.67 475.306 1171.02C393.771 1176.75 322.339 1107.27 299.4 1026.88C295.947 1014.77 299.177 1004.35 297.536 991.271C291.263 985.305 289.297 976.673 289.109 970.725C289.075 969.545 299.912 968.434 300.545 968.588C297.622 956.247 289.981 941.564 293.109 917.172C395.874 896.455 497.681 831.569 537.013 747.316Z" fill="#EC691F"/>
+  </svg>
+</header>
+
+<section class="hero">
+  <div class="hero-badge"><span class="dot"></span>Module 10 · APIs</div>
+  <h1>Two computers talking <em>politely.</em></h1>
+  <p class="hero-sub">An API is just a doorway between programs — one asks, the other answers, both follow a set of manners. Once you see the four polite words (GET, POST, PUT, DELETE), the locked door (auth), and the queue rules (rate limits), every API in the world looks the same.</p>
+</section>
+
+<section class="case-study">
+  <div class="case-study-card">
+    <div class="case-study-icon">🚚</div>
+    <div class="case-study-content">
+      <div class="case-study-label">The Case · Trailblaze Logistics</div>
+      <h2>Building the live shipment dashboard for a <em>nationwide courier</em></h2>
+      <p>Trailblaze moves 80,000 shipments a day across 280 cities. Their operations team needs a dashboard that pulls real-time package status, lets them update delivery attempts, and flags problems. Every lesson here talks to one fictional REST API: <code style="color:#F5943E">api.trailblaze.in/v1</code>. By the end you'll know exactly how that conversation works — request by request.</p>
+    </div>
+  </div>
+</section>
+
+<main class="lessons">
+
+  <article class="lesson">
+    <div class="lesson-head">
+      <div class="lesson-num"><span class="lesson-num-circle">1</span>HTTP methods · the four polite verbs</div>
+      <h2>GET, POST, PUT, DELETE — and what each one actually does</h2>
+      <p class="lesson-intro">Every API request is a verb plus a noun: "GET this shipment" or "DELETE that user". There are dozens of HTTP methods in theory, but in practice you'll use four. Each does one job. Click each verb to see exactly what happens between Trailblaze's app and the API.</p>
+    </div>
+    <div class="lesson-body">
+      <div class="explain">
+        Think of it like a librarian. <strong>GET</strong> = "show me book #42" (read, no change). <strong>POST</strong> = "here's a new book, add it" (create). <strong>PUT</strong> = "replace the details of book #42 with these" (update). <strong>DELETE</strong> = "remove book #42 from the shelf". The URL points to the resource; the verb says what to do with it.
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">Click each method · see the request and response</div>
+        <div class="http-grid">
+          <div class="method-list">
+            <button class="method-btn active" data-m="GET"><span class="verb">GET</span><span class="desc">Read a shipment's status</span></button>
+            <button class="method-btn" data-m="POST"><span class="verb">POST</span><span class="desc">Create a new shipment</span></button>
+            <button class="method-btn" data-m="PUT"><span class="verb">PUT</span><span class="desc">Update delivery details</span></button>
+            <button class="method-btn" data-m="DELETE"><span class="verb">DELETE</span><span class="desc">Cancel a shipment</span></button>
+          </div>
+          <div class="http-panel">
+            <div class="http-bar">
+              <span class="verb-tag" id="httpVerb" style="background:#3B7DD8">GET</span>
+              <span class="url" id="httpUrl">/v1/shipments/TBZ-48291</span>
+            </div>
+            <div class="http-body">
+              <div class="http-desc" id="httpDesc"></div>
+              <div class="http-flow" id="httpFlow"></div>
+              <div class="http-resp" id="httpResp"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="code-toggle">
+          <button class="code-toggle-btn" onclick="toggleCode(this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg> Show the Python requests code</button>
+<pre class="code-block"><span class="kw">import</span> requests
+
+base = <span class="str">"https://api.trailblaze.in/v1"</span>
+
+<span class="com"># GET — fetch a single shipment</span>
+r = requests.<span class="fn">get</span>(<span class="str">f"{base}/shipments/TBZ-48291"</span>)
+shipment = r.<span class="fn">json</span>()
+
+<span class="com"># POST — create a new shipment</span>
+new_ship = {<span class="str">"origin"</span>: <span class="str">"Mumbai"</span>, <span class="str">"dest"</span>: <span class="str">"Pune"</span>, <span class="str">"weight_kg"</span>: <span class="num">2.3</span>}
+r = requests.<span class="fn">post</span>(<span class="str">f"{base}/shipments"</span>, json=new_ship)
+
+<span class="com"># PUT — replace the delivery address</span>
+update = {<span class="str">"dest_pincode"</span>: <span class="str">"411014"</span>, <span class="str">"phone"</span>: <span class="str">"+91-9XXXXX1234"</span>}
+r = requests.<span class="fn">put</span>(<span class="str">f"{base}/shipments/TBZ-48291"</span>, json=update)
+
+<span class="com"># DELETE — cancel the shipment</span>
+r = requests.<span class="fn">delete</span>(<span class="str">f"{base}/shipments/TBZ-48291"</span>)
+<span class="kw">assert</span> r.status_code == <span class="num">204</span>  <span class="com"># 204 = No Content, success</span></pre>
+        </div>
+
+        <div class="try-it">
+          <div class="try-it-label">→ Try this</div>
+          <h4>The hotel-room mnemonic</h4>
+          <p>Imagine a hotel front desk. <strong>GET</strong> = "let me see room 304" (no key, just the registry). <strong>POST</strong> = "I'd like to book a room please" (you don't pick the room number — the hotel assigns it). <strong>PUT</strong> = "I'm in 304 and I want the king bed swapped for twin beds" (replace details of an existing room). <strong>DELETE</strong> = "cancel my booking". If you remember this, the whole REST world clicks.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="lesson">
+    <div class="lesson-head">
+      <div class="lesson-num"><span class="lesson-num-circle">2</span>JSON parsing · reading what the API hands back</div>
+      <h2>From a wall of text to a Python value you can use</h2>
+      <p class="lesson-intro">APIs almost always reply in JSON — a nested format with keys, values, and lists. The trick is navigating to the specific value you want. Click any line in the response tree to see the exact Python path that gets you to that value.</p>
+    </div>
+    <div class="lesson-body">
+      <div class="explain">
+        JSON has just six building blocks: <strong>objects</strong> (curly braces with key-value pairs), <strong>arrays</strong> (square brackets with items), <strong>strings</strong>, <strong>numbers</strong>, <strong>booleans</strong>, and <strong>null</strong>. In Python, an object becomes a <code>dict</code>, an array becomes a <code>list</code>. Once you've called <code>r.json()</code>, you navigate it with the same square brackets you'd use on any dict or list.
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">Click any value in the response · see how to reach it in Python</div>
+        <div class="json-grid">
+          <div class="json-tree" id="jsonTree"></div>
+          <div class="json-side" id="jsonSide">
+            <h4>Pick a value</h4>
+            <p class="json-empty">Click any value on the left and you'll see the exact Python path here.</p>
+          </div>
+        </div>
+
+        <div class="code-toggle">
+          <button class="code-toggle-btn" onclick="toggleCode(this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg> Show how to parse this response</button>
+<pre class="code-block"><span class="kw">import</span> requests
+
+r = requests.<span class="fn">get</span>(<span class="str">"https://api.trailblaze.in/v1/shipments/TBZ-48291"</span>)
+data = r.<span class="fn">json</span>()  <span class="com"># ← turns the JSON text into a Python dict</span>
+
+<span class="com"># Top-level fields are just dict keys</span>
+ship_id  = data[<span class="str">"shipment_id"</span>]
+status   = data[<span class="str">"status"</span>]
+
+<span class="com"># Nested objects — chain the brackets</span>
+sender   = data[<span class="str">"sender"</span>][<span class="str">"name"</span>]
+city     = data[<span class="str">"recipient"</span>][<span class="str">"address"</span>][<span class="str">"city"</span>]
+
+<span class="com"># Arrays — index by position, then dig in</span>
+first_scan_at = data[<span class="str">"events"</span>][<span class="num">0</span>][<span class="str">"timestamp"</span>]
+last_event    = data[<span class="str">"events"</span>][-<span class="num">1</span>][<span class="str">"location"</span>]
+
+<span class="com"># Safer access for fields that might be missing</span>
+delivered_at  = data.<span class="fn">get</span>(<span class="str">"delivered_at"</span>, <span class="kw">None</span>)
+<span class="fn">print</span>(<span class="str">f"{ship_id}: {status}, last seen {last_event}"</span>)</pre>
+        </div>
+
+        <div class="try-it">
+          <div class="try-it-label">→ Try this</div>
+          <h4>The matryoshka rule</h4>
+          <p>Every JSON response is a nested Russian doll. Start from the outermost layer and work inward, naming what you see: "It's a dict → with a key called <code>events</code> → that holds a list → whose first item is a dict → with a key called <code>timestamp</code>." Say that sentence in your head and the bracket chain <code>data["events"][0]["timestamp"]</code> writes itself.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="lesson">
+    <div class="lesson-head">
+      <div class="lesson-num"><span class="lesson-num-circle">3</span>Authentication · API keys and Bearer tokens</div>
+      <h2>Three ways the API decides whether to talk to you</h2>
+      <p class="lesson-intro">Most useful APIs won't answer strangers. You have to identify yourself in a header that travels with every request. Switch between "no auth", "API key", and "Bearer token" to see the same request fail and then succeed — purely because of one line added to the headers.</p>
+    </div>
+    <div class="lesson-body">
+      <div class="explain">
+        An <strong>API key</strong> is a long string Trailblaze gives you when you sign up — like a club membership card. A <strong>Bearer token</strong> is the same idea but usually short-lived (it expires after a few hours), commonly issued after a separate login step. Both travel in HTTP headers, not the URL — never put secrets in the URL itself, because URLs end up in server logs and browser history.
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">Same request, three auth styles · see what changes</div>
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-a="none">No auth <span class="pill">401</span></button>
+          <button class="auth-tab" data-a="apikey">API key <span class="pill">200</span></button>
+          <button class="auth-tab" data-a="bearer">Bearer token <span class="pill">200</span></button>
+        </div>
+
+        <div class="auth-panel show" data-a="none">
+          <div class="auth-req"><span class="c"># curl-style view of the request</span>
+GET /v1/shipments/TBZ-48291 HTTP/1.1
+Host: api.trailblaze.in
+Accept: application/json
+
+<span class="c">--- response ---</span>
+HTTP/1.1 <span class="err">401 Unauthorized</span>
+Content-Type: application/json
+
+{<span class="h">"error"</span>: <span class="v">"Missing authentication credentials"</span>,
+ <span class="h">"hint"</span>: <span class="v">"Add an Authorization header"</span>}</div>
+          <div class="auth-status fail">⚠ Request rejected · <strong>401 Unauthorized</strong> · the server doesn't know who you are</div>
+          <div class="auth-note"><strong>What just happened?</strong> No headers identifying the caller, so the API turns you away at the door before doing any work. This is the default behavior for nearly every commercial API on the internet.</div>
+        </div>
+
+        <div class="auth-panel" data-a="apikey">
+          <div class="auth-req"><span class="c"># Same request — but with an API key header</span>
+GET /v1/shipments/TBZ-48291 HTTP/1.1
+Host: api.trailblaze.in
+Accept: application/json
+<span class="h">X-Api-Key:</span> <span class="v">tbz_live_4f8a92e6c1d3b7a0f5e8d4c2b9a7e3f1</span>
+
+<span class="c">--- response ---</span>
+HTTP/1.1 <span class="ok">200 OK</span>
+Content-Type: application/json
+
+{<span class="h">"shipment_id"</span>: <span class="v">"TBZ-48291"</span>,
+ <span class="h">"status"</span>: <span class="v">"In transit"</span>,
+ <span class="h">"location"</span>: <span class="v">"Pune Hub"</span>}</div>
+          <div class="auth-status pass">✓ <strong>200 OK</strong> · the API recognized your key and returned the shipment</div>
+          <div class="auth-note"><strong>API keys</strong> are long, opaque strings tied to your account. They usually go in a custom header like <code>X-Api-Key</code> or as a query parameter (less secure). Treat them like passwords — never commit them to GitHub. We'll fix that properly in Module 14 with environment variables.</div>
+        </div>
+
+        <div class="auth-panel" data-a="bearer">
+          <div class="auth-req"><span class="c"># OAuth-style Bearer token — usually short-lived</span>
+GET /v1/shipments/TBZ-48291 HTTP/1.1
+Host: api.trailblaze.in
+Accept: application/json
+<span class="h">Authorization:</span> <span class="v">Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...</span>
+
+<span class="c">--- response ---</span>
+HTTP/1.1 <span class="ok">200 OK</span>
+Content-Type: application/json
+
+{<span class="h">"shipment_id"</span>: <span class="v">"TBZ-48291"</span>,
+ <span class="h">"status"</span>: <span class="v">"In transit"</span>,
+ <span class="h">"location"</span>: <span class="v">"Pune Hub"</span>}</div>
+          <div class="auth-status pass">✓ <strong>200 OK</strong> · token accepted, valid for the next 60 minutes</div>
+          <div class="auth-note"><strong>Bearer tokens</strong> go in the standardized <code>Authorization</code> header with the literal word "Bearer" in front. They're typically issued by a login endpoint, expire quickly, and can be refreshed. Most modern OAuth-protected APIs (Google, GitHub, Spotify) use this pattern.</div>
+        </div>
+
+        <div class="code-toggle">
+          <button class="code-toggle-btn" onclick="toggleCode(this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg> Show how to send auth headers in Python</button>
+<pre class="code-block"><span class="kw">import</span> requests
+<span class="kw">import</span> os
+
+<span class="com"># API key style — custom header</span>
+headers = {<span class="str">"X-Api-Key"</span>: os.environ[<span class="str">"TRAILBLAZE_KEY"</span>]}
+r = requests.<span class="fn">get</span>(<span class="str">"https://api.trailblaze.in/v1/shipments/TBZ-48291"</span>,
+                 headers=headers)
+
+<span class="com"># Bearer token style — Authorization header</span>
+token = os.environ[<span class="str">"TRAILBLAZE_TOKEN"</span>]
+headers = {<span class="str">"Authorization"</span>: <span class="str">f"Bearer {token}"</span>}
+r = requests.<span class="fn">get</span>(<span class="str">"https://api.trailblaze.in/v1/shipments/TBZ-48291"</span>,
+                 headers=headers)
+
+<span class="com"># Reuse the headers across many calls — use a Session</span>
+s = requests.<span class="fn">Session</span>()
+s.headers.<span class="fn">update</span>({<span class="str">"Authorization"</span>: <span class="str">f"Bearer {token}"</span>})
+r1 = s.<span class="fn">get</span>(<span class="str">"https://api.trailblaze.in/v1/shipments/TBZ-48291"</span>)
+r2 = s.<span class="fn">get</span>(<span class="str">"https://api.trailblaze.in/v1/shipments/TBZ-48292"</span>)
+<span class="com"># Both requests carry the token automatically</span></pre>
+        </div>
+
+        <div class="try-it">
+          <div class="try-it-label">→ Try this</div>
+          <h4>Read the error, not the silence</h4>
+          <p>When an API call fails, the error code is doing real work. <strong>401</strong> = "I don't know who you are" (auth missing/wrong). <strong>403</strong> = "I know who you are, but you're not allowed" (permission issue). <strong>404</strong> = "that resource doesn't exist". <strong>429</strong> = "you're going too fast" (we'll meet this in Lesson 5). <strong>5xx</strong> = "it's my fault, try again later". Always print <code>r.status_code</code> and <code>r.text</code> on failure — the API is telling you what's wrong.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="lesson">
+    <div class="lesson-head">
+      <div class="lesson-num"><span class="lesson-num-circle">4</span>Pagination · 80,000 shipments, 50 at a time</div>
+      <h2>Why APIs hand you data in slices — and how to walk through all of it</h2>
+      <p class="lesson-intro">Trailblaze handles 80,000 shipments a day. If you asked the API "give me everything", the response would be a 200 MB JSON blob and the server would melt. APIs solve this by paginating — they return a small slice plus instructions on how to ask for the next slice. Page through the data below.</p>
+    </div>
+    <div class="lesson-body">
+      <div class="explain">
+        The two common pagination styles: <strong>offset-based</strong> (you say "give me 50 items, starting from item 100") with parameters like <code>?page=3&amp;limit=50</code> or <code>?offset=100&amp;limit=50</code>; and <strong>cursor-based</strong> (the API hands you a token like <code>next_cursor=abc123</code> and you pass it back to get the next chunk). Offset is simpler; cursor is more reliable when data is changing while you read.
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">Walk through 80,000 shipments · 50 per page</div>
+        <div class="pag-url" id="pagUrl"></div>
+        <div class="pag-controls">
+          <button class="pag-btn" id="pagFirst">⏮ First</button>
+          <button class="pag-btn" id="pagPrev">← Prev</button>
+          <button class="pag-btn primary" id="pagNext">Next →</button>
+          <button class="pag-btn" id="pagLast">Last ⏭</button>
+          <span class="pag-info" id="pagInfo"></span>
+        </div>
+        <div class="pag-wrap"><table class="pag-table" id="pagTable"></table></div>
+
+        <div class="code-toggle">
+          <button class="code-toggle-btn" onclick="toggleCode(this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg> Show the loop that walks every page</button>
+<pre class="code-block"><span class="kw">import</span> requests
+
+base = <span class="str">"https://api.trailblaze.in/v1/shipments"</span>
+headers = {<span class="str">"X-Api-Key"</span>: <span class="str">"tbz_live_..."</span>}
+
+<span class="com"># ─── Offset-style pagination ──────────────────────────────</span>
+all_ships, page = [], <span class="num">1</span>
+<span class="kw">while True</span>:
+    r = requests.<span class="fn">get</span>(base, headers=headers,
+                     params={<span class="str">"page"</span>: page, <span class="str">"limit"</span>: <span class="num">50</span>})
+    body = r.<span class="fn">json</span>()
+    all_ships.<span class="fn">extend</span>(body[<span class="str">"results"</span>])
+    <span class="kw">if</span> page &gt;= body[<span class="str">"total_pages"</span>]: <span class="kw">break</span>
+    page += <span class="num">1</span>
+
+<span class="com"># ─── Cursor-style pagination (more robust) ────────────────</span>
+all_ships, cursor = [], <span class="kw">None</span>
+<span class="kw">while True</span>:
+    params = {<span class="str">"limit"</span>: <span class="num">50</span>}
+    <span class="kw">if</span> cursor: params[<span class="str">"cursor"</span>] = cursor
+    body = requests.<span class="fn">get</span>(base, headers=headers, params=params).<span class="fn">json</span>()
+    all_ships.<span class="fn">extend</span>(body[<span class="str">"results"</span>])
+    cursor = body.<span class="fn">get</span>(<span class="str">"next_cursor"</span>)
+    <span class="kw">if not</span> cursor: <span class="kw">break</span>
+
+<span class="fn">print</span>(<span class="str">f"Pulled {len(all_ships):,} shipments"</span>)</pre>
+        </div>
+
+        <div class="try-it">
+          <div class="try-it-label">→ Try this</div>
+          <h4>The "first three pages only" rule</h4>
+          <p>When you're exploring a new API, never write the full pagination loop on attempt one. First call the endpoint with <code>page=1</code> and just print the response keys. You'll discover whether the data lives under <code>results</code> or <code>data</code> or <code>items</code>, how the total is reported, and whether pagination is offset or cursor. Only <em>then</em> wrap it in a loop. Many people debug a broken pagination loop for an hour before realizing the data was under a key they hadn't checked.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="lesson">
+    <div class="lesson-head">
+      <div class="lesson-num"><span class="lesson-num-circle">5</span>Rate limiting · don't hammer the door</div>
+      <h2>Why you'll see 429s — and how to respect the queue</h2>
+      <p class="lesson-intro">Every API caps how often you can ask. Trailblaze allows 10 requests per minute on the free tier. Click the FETCH button rapidly and watch the quota burn, then the 429s start. Notice the <code>Retry-After</code> header — that's the API telling you exactly how long to wait.</p>
+    </div>
+    <div class="lesson-body">
+      <div class="explain">
+        Rate limiting protects the API from being overwhelmed and protects you from accidentally DDoS-ing someone. When you hit the limit you get <strong>429 Too Many Requests</strong> with a <code>Retry-After</code> header (seconds to wait). The right reaction in code is <strong>exponential backoff</strong> — wait, retry, wait longer, retry, give up after N tries. Never hammer in a tight retry loop.
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">Click Fetch repeatedly · watch the quota and 429s</div>
+        <div class="rl-frame">
+          <div class="rl-controls">
+            <button class="rl-bigbtn" id="rlFetch">▶ FETCH</button>
+            <div class="rl-quota">
+              <div class="rl-quota-fill" id="rlFill" style="width:0%"></div>
+              <div class="rl-quota-text" id="rlText">10 / 10 remaining</div>
+            </div>
+            <button class="pag-btn" id="rlReset">Reset window</button>
+          </div>
+          <div class="rl-log" id="rlLog"><div class="rl-log-row"><span class="t">--:--:--</span><span class="s">·</span><span class="m">Click ▶ FETCH to start. Try rapid-fire clicks.</span></div></div>
+          <div class="rl-headers" id="rlHeaders">
+            <span class="hk">X-RateLimit-Limit:</span> <span class="hv">10</span> &nbsp; · &nbsp;
+            <span class="hk">X-RateLimit-Remaining:</span> <span class="hv">10</span> &nbsp; · &nbsp;
+            <span class="hk">X-RateLimit-Reset:</span> <span class="hv">60s</span>
+          </div>
+        </div>
+
+        <div class="code-toggle">
+          <button class="code-toggle-btn" onclick="toggleCode(this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg> Show the exponential-backoff retry pattern</button>
+<pre class="code-block"><span class="kw">import</span> requests
+<span class="kw">import</span> time
+
+<span class="kw">def</span> <span class="fn">fetch_with_backoff</span>(url, headers, max_tries=<span class="num">6</span>):
+    delay = <span class="num">1</span>
+    <span class="kw">for</span> attempt <span class="kw">in</span> <span class="fn">range</span>(max_tries):
+        r = requests.<span class="fn">get</span>(url, headers=headers)
+        <span class="kw">if</span> r.status_code == <span class="num">429</span>:
+            wait = <span class="fn">int</span>(r.headers.<span class="fn">get</span>(<span class="str">"Retry-After"</span>, delay))
+            <span class="fn">print</span>(<span class="str">f"Rate limited — sleeping {wait}s"</span>)
+            time.<span class="fn">sleep</span>(wait)
+            delay *= <span class="num">2</span>   <span class="com"># exponential backoff</span>
+            <span class="kw">continue</span>
+        r.<span class="fn">raise_for_status</span>()
+        <span class="kw">return</span> r.<span class="fn">json</span>()
+    <span class="kw">raise</span> <span class="fn">RuntimeError</span>(<span class="str">"Gave up after too many 429s"</span>)
+
+<span class="com"># Also: stay UNDER the limit proactively</span>
+PER_MIN = <span class="num">10</span>
+<span class="kw">for</span> ship_id <span class="kw">in</span> shipment_ids:
+    fetch(ship_id)
+    time.<span class="fn">sleep</span>(<span class="num">60</span> / PER_MIN)   <span class="com"># pace yourself: 6 sec between calls</span></pre>
+        </div>
+
+        <div class="try-it">
+          <div class="try-it-label">→ Try this</div>
+          <h4>The good citizen rule</h4>
+          <p>Before scaling up any script that calls a third-party API, read the rate-limit section of their docs. Then deliberately run your script slower than the limit — if the cap is 60/min, pace yourself at 50/min. The extra headroom protects you when something else on your network briefly delays a call. The polite, predictable script that runs all night beats the aggressive one that gets your API key suspended at 3 AM.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+</main>
+
+<nav class="footer-nav">
+  <a class="footer-link prev" href="09-eda-narrative.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+    <div>
+      <div class="footer-link-meta">Previous · Module 09</div>
+      <div class="footer-link-title">EDA narrative</div>
+    </div>
+  </a>
+  <a class="footer-link next" href="11-web-scraping.html">
+    <div>
+      <div class="footer-link-meta">Next · Module 11</div>
+      <div class="footer-link-title">Web scraping with BeautifulSoup</div>
+    </div>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+  </a>
+</nav>
+
+<footer class="footer-base">
+  Foundations of Data Analysis · Module 10 of 14 · <span>MokshPath</span> · Built for learners of every background
+</footer>
+
+<script>
+function toggleCode(btn){
+  const block = btn.nextElementSibling;
+  block.classList.toggle('show');
+  btn.classList.toggle('open');
+}
+document.querySelectorAll('.code-toggle-btn').forEach((btn)=>{
+  const original = btn.textContent.trim();
+  btn.dataset.label = original;
+  btn.addEventListener('click', ()=>{
+    const block = btn.nextElementSibling;
+    setTimeout(()=>{
+      btn.innerHTML = (block.classList.contains('show')
+        ? '<svg viewBox="0 0 16 16" fill="currentColor" style="transform:rotate(90deg)"><path d="M6 4l4 4-4 4"/></svg> Hide ' + btn.dataset.label.replace(/^Show\s*/,'')
+        : '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg> ' + btn.dataset.label);
+    }, 0);
+  });
+});
+
+/* ============ Lesson 1 · HTTP methods ============ */
+const httpData = {
+  GET: {color:'#3B7DD8', url:'/v1/shipments/TBZ-48291',
+    desc:'<strong>GET</strong> is the read verb. The body of the request is empty — all the info is in the URL. The server returns whatever resource that URL points to. Safe (no side effects), idempotent (calling it 10 times changes nothing).',
+    flow:'<span class="arrow">→</span> ASK   "What\'s the status of shipment TBZ-48291?"<br><span class="arrow">←</span> SERVER replies with the current record<br><span class="label">Result · the dashboard widget displays this data</span>',
+    resp:'HTTP/1.1 <span class="ok">200 OK</span>\nContent-Type: application/json\n\n{\n  <span class="key">"shipment_id"</span>: <span class="val">"TBZ-48291"</span>,\n  <span class="key">"status"</span>: <span class="val">"In transit"</span>,\n  <span class="key">"current_location"</span>: <span class="val">"Pune Hub"</span>,\n  <span class="key">"eta_iso"</span>: <span class="val">"2026-05-27T14:30:00Z"</span>\n}'},
+  POST: {color:'#4CAF50', url:'/v1/shipments',
+    desc:'<strong>POST</strong> is the create verb. The request carries a JSON body — the details of the thing you want to create. The server picks the new ID and returns the created record. Calling it twice creates two shipments.',
+    flow:'<span class="arrow">→</span> SEND   { origin: "Mumbai", dest: "Pune", weight: 2.3 }<br><span class="arrow">←</span> SERVER creates and returns the new shipment with its assigned ID<br><span class="label">Result · the warehouse generates a new label</span>',
+    resp:'HTTP/1.1 <span class="ok">201 Created</span>\nLocation: /v1/shipments/TBZ-91047\n\n{\n  <span class="key">"shipment_id"</span>: <span class="val">"TBZ-91047"</span>,  <span class="com">// server assigned</span>\n  <span class="key">"status"</span>: <span class="val">"Booked"</span>,\n  <span class="key">"created_at"</span>: <span class="val">"2026-05-25T05:42:11Z"</span>\n}'},
+  PUT: {color:'#E0A800', url:'/v1/shipments/TBZ-48291',
+    desc:'<strong>PUT</strong> is the update verb. You\'re saying "this is the new state for this exact resource". The URL identifies which resource; the body is the replacement. Idempotent — running it 10 times leaves the resource in the same final state.',
+    flow:'<span class="arrow">→</span> SEND   { dest_pincode: "411014", phone: "+91-9XXXXX1234" }<br><span class="arrow">←</span> SERVER replaces the relevant fields and returns the updated record<br><span class="label">Result · the delivery agent gets the corrected address</span>',
+    resp:'HTTP/1.1 <span class="ok">200 OK</span>\n\n{\n  <span class="key">"shipment_id"</span>: <span class="val">"TBZ-48291"</span>,\n  <span class="key">"dest_pincode"</span>: <span class="val">"411014"</span>,  <span class="com">// updated</span>\n  <span class="key">"phone"</span>: <span class="val">"+91-9XXXXX1234"</span>,\n  <span class="key">"updated_at"</span>: <span class="val">"2026-05-25T05:44:02Z"</span>\n}'},
+  DELETE: {color:'#E5484D', url:'/v1/shipments/TBZ-48291',
+    desc:'<strong>DELETE</strong> is the remove verb. The URL points to what should go. Body is typically empty. The server confirms the deletion — usually with a 204 No Content (success, nothing to send back). Calling it again on the same resource gives 404.',
+    flow:'<span class="arrow">→</span> ASK   "Cancel shipment TBZ-48291"<br><span class="arrow">←</span> SERVER removes it and confirms<br><span class="label">Result · the shipment vanishes from the active board</span>',
+    resp:'HTTP/1.1 <span class="ok">204 No Content</span>\n\n<span class="com">// (empty body — deletion confirmed)</span>\n\n<span class="com">// A second DELETE call would now return:</span>\n<span class="com">// HTTP/1.1 404 Not Found</span>'}
+};
+function showMethod(m){
+  const d = httpData[m];
+  document.querySelectorAll('.method-btn').forEach(b=> b.classList.toggle('active', b.dataset.m === m));
+  document.getElementById('httpVerb').textContent = m;
+  document.getElementById('httpVerb').style.background = d.color;
+  document.getElementById('httpUrl').textContent = d.url;
+  document.getElementById('httpDesc').innerHTML = d.desc;
+  document.getElementById('httpFlow').innerHTML = d.flow;
+  document.getElementById('httpResp').innerHTML = d.resp;
+}
+document.querySelectorAll('.method-btn').forEach(b=> b.addEventListener('click', ()=> showMethod(b.dataset.m)));
+showMethod('GET');
+
+/* ============ Lesson 2 · JSON tree ============ */
+const jsonResponse = {
+  shipment_id: "TBZ-48291",
+  status: "In transit",
+  sender: { name: "Aarav Industries", city: "Mumbai" },
+  recipient: {
+    name: "Priya Sharma",
+    phone: "+91-9XXXXX5678",
+    address: { line1: "B-204 Lake View", city: "Pune", pincode: "411014" }
+  },
+  weight_kg: 2.3,
+  insured: true,
+  events: [
+    { timestamp: "2026-05-24T08:12:00Z", location: "Mumbai Hub", status: "Picked up" },
+    { timestamp: "2026-05-24T19:45:00Z", location: "Pune Sort Center", status: "In transit" }
+  ]
+};
+const jsonNotes = {
+  'data["shipment_id"]':'A top-level <strong>string</strong>. The fastest kind of access — one bracket gets you the value.',
+  'data["status"]':'A top-level string. The dashboard shows this prominently.',
+  'data["sender"]':'A nested <strong>object</strong> — in Python this is a dict. You\'d usually go one level deeper to its fields.',
+  'data["sender"]["name"]':'Two levels deep. Chain brackets to navigate nested objects.',
+  'data["sender"]["city"]':'Same chain pattern. Each bracket peels one layer.',
+  'data["recipient"]':'Another nested object — note it goes <em>three</em> levels deep into <code>address</code>.',
+  'data["recipient"]["address"]':'A nested object <em>inside</em> a nested object. Very common in real APIs.',
+  'data["recipient"]["address"]["line1"]':'Three brackets to get here. Real-world APIs nest deeper still.',
+  'data["recipient"]["address"]["pincode"]':'A pincode is a string, not a number — leading zeros matter, so APIs send these as strings.',
+  'data["weight_kg"]':'A <strong>number</strong> (float). Python parses this as <code>float</code>.',
+  'data["insured"]':'A <strong>boolean</strong>. JSON\'s <code>true</code> becomes Python\'s <code>True</code>.',
+  'data["events"]':'A <strong>list</strong> of objects. Index with <code>[0]</code>, <code>[1]</code>, or loop over it.',
+  'data["events"][0]':'The first event in the list. Use <code>[-1]</code> for the latest.',
+  'data["events"][0]["timestamp"]':'A timestamp string. Convert to a real datetime with <code>pd.to_datetime()</code> later.'
+};
+function renderTree(){
+  const lines = [];
+  function push(path, indent, content){
+    lines.push(`<span class="row" data-p='${path}'>${'  '.repeat(indent)}${content}</span>`);
+  }
+  function valSpan(v){
+    if (typeof v === 'string') return `<span class="s">"${v}"</span>`;
+    if (typeof v === 'number') return `<span class="n">${v}</span>`;
+    if (typeof v === 'boolean') return `<span class="b">${v}</span>`;
+    return '';
+  }
+  function walkObj(obj, indent, prefix){
+    const entries = Object.entries(obj);
+    entries.forEach(([k,v],i)=>{
+      const p = prefix + '["' + k + '"]';
+      const comma = i < entries.length-1 ? ',' : '';
+      if (typeof v === 'object' && v !== null && !Array.isArray(v)){
+        push(p, indent, `<span class="k">"${k}"</span>: <span class="br">{</span>`);
+        walkObj(v, indent+1, p);
+        push(p, indent, `<span class="br">}</span>${comma}`);
+      } else if (Array.isArray(v)){
+        push(p, indent, `<span class="k">"${k}"</span>: <span class="br">[</span>`);
+        v.forEach((item,j)=>{
+          const pp = p + '[' + j + ']';
+          push(pp, indent+1, '<span class="br">{</span>');
+          walkObj(item, indent+2, pp);
+          push(pp, indent+1, `<span class="br">}</span>${j<v.length-1?',':''}`);
+        });
+        push(p, indent, `<span class="br">]</span>${comma}`);
+      } else {
+        push(p, indent, `<span class="k">"${k}"</span>: ${valSpan(v)}${comma}`);
+      }
+    });
+  }
+  push('data', 0, '<span class="br">{</span>');
+  walkObj(jsonResponse, 1, 'data');
+  push('data', 0, '<span class="br">}</span>');
+  document.getElementById('jsonTree').innerHTML = lines.join('\n');
+  document.querySelectorAll('.json-tree .row').forEach(r=>{
+    r.addEventListener('click', ()=>{
+      document.querySelectorAll('.json-tree .row').forEach(x=>x.classList.remove('highlight'));
+      r.classList.add('highlight');
+      showJsonPath(r.dataset.p);
+    });
+  });
+}
+function showJsonPath(path){
+  let val;
+  try { val = eval('jsonResponse' + path.replace(/^data/, '')); }
+  catch(e) { val = '—'; }
+  const note = jsonNotes[path] || 'A reachable value at this path.';
+  let display;
+  if (typeof val === 'string') display = '"' + val + '"';
+  else if (Array.isArray(val) || typeof val === 'object') display = JSON.stringify(val, null, 2);
+  else display = String(val);
+  document.getElementById('jsonSide').innerHTML = `
+    <h4>Python path</h4>
+    <div class="json-path">${path}</div>
+    <h4 style="margin-top:.8rem">Value returned</h4>
+    <div class="json-val">${display}</div>
+    <div class="json-note">${note}</div>
+  `;
+}
+renderTree();
+
+/* ============ Lesson 3 · Auth tabs ============ */
+document.querySelectorAll('.auth-tab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    const a = t.dataset.a;
+    document.querySelectorAll('.auth-tab').forEach(x=> x.classList.toggle('active', x === t));
+    document.querySelectorAll('.auth-panel').forEach(p=> p.classList.toggle('show', p.dataset.a === a));
+  });
+});
+
+/* ============ Lesson 4 · Pagination ============ */
+const PAG_TOTAL = 80000, PAG_PER = 50, PAG_PAGES = Math.ceil(PAG_TOTAL / PAG_PER);
+let pagPage = 1;
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const cities = ['Mumbai','Pune','Delhi','Bengaluru','Chennai','Kolkata','Hyderabad','Jaipur','Goa','Ahmedabad','Lucknow','Indore'];
+const names = ['Aarav','Vihaan','Aditya','Diya','Priya','Anaya','Reyansh','Arjun','Ishaan','Ananya','Saanvi','Kavya','Rohan'];
+const surnames = ['Sharma','Verma','Patel','Singh','Kumar','Iyer','Reddy','Bose','Mehta','Khan','Joshi','Nair'];
+const statuses = ['Delivered','Transit','Pending','Failed'];
+function pagRows(page){
+  const start = (page-1)*PAG_PER;
+  const rng = mulberry32(start * 7919 + 1);
+  const rows = [];
+  for (let i=0; i<6; i++){
+    const id = 'TBZ-' + String(start + i + 10000).padStart(6,'0');
+    const o = cities[Math.floor(rng()*cities.length)];
+    let d = cities[Math.floor(rng()*cities.length)]; while(d===o) d = cities[Math.floor(rng()*cities.length)];
+    const n = names[Math.floor(rng()*names.length)] + ' ' + surnames[Math.floor(rng()*surnames.length)];
+    const s = statuses[Math.floor(rng()*statuses.length)];
+    const w = (0.5 + rng()*5).toFixed(1);
+    rows.push({id,o,d,n,s,w});
+  }
+  return rows;
+}
+function renderPag(){
+  const start = (pagPage-1)*PAG_PER + 1;
+  const end = Math.min(pagPage*PAG_PER, PAG_TOTAL);
+  document.getElementById('pagUrl').innerHTML = `GET /v1/shipments?<span class="q">page=${pagPage}&amp;limit=${PAG_PER}</span>`;
+  document.getElementById('pagInfo').textContent = `${start.toLocaleString()}–${end.toLocaleString()} of ${PAG_TOTAL.toLocaleString()} · page ${pagPage} / ${PAG_PAGES}`;
+  document.getElementById('pagFirst').disabled = pagPage === 1;
+  document.getElementById('pagPrev').disabled = pagPage === 1;
+  document.getElementById('pagNext').disabled = pagPage === PAG_PAGES;
+  document.getElementById('pagLast').disabled = pagPage === PAG_PAGES;
+  const rows = pagRows(pagPage);
+  let html = '<thead><tr><th>shipment_id</th><th>origin</th><th>dest</th><th>recipient</th><th>wt(kg)</th><th>status</th></tr></thead><tbody>';
+  rows.forEach(r=>{
+    html += `<tr><td>${r.id}</td><td>${r.o}</td><td>${r.d}</td><td>${r.n}</td><td>${r.w}</td><td class="status-${r.s}">${r.s}</td></tr>`;
+  });
+  html += `<tr><td colspan="6" style="text-align:center;color:#9597A6;font-style:italic;padding:.5rem">… ${PAG_PER-6} more rows on this page …</td></tr></tbody>`;
+  document.getElementById('pagTable').innerHTML = html;
+}
+document.getElementById('pagFirst').addEventListener('click',()=>{pagPage=1;renderPag()});
+document.getElementById('pagPrev').addEventListener('click',()=>{if(pagPage>1){pagPage--;renderPag()}});
+document.getElementById('pagNext').addEventListener('click',()=>{if(pagPage<PAG_PAGES){pagPage++;renderPag()}});
+document.getElementById('pagLast').addEventListener('click',()=>{pagPage=PAG_PAGES;renderPag()});
+renderPag();
+
+/* ============ Lesson 5 · Rate limit ============ */
+const RL_MAX = 10;
+let rlRemaining = RL_MAX, rlReset = null;
+function rlNow(){ return new Date().toTimeString().slice(0,8); }
+function rlLog(type, msg){
+  const log = document.getElementById('rlLog');
+  const row = document.createElement('div');
+  row.className = 'rl-log-row ' + type;
+  const sym = type === 'ok' ? '✓' : type === 'warn' ? '⚠' : '✕';
+  row.innerHTML = `<span class="t">${rlNow()}</span><span class="s">${sym}</span><span class="m">${msg}</span>`;
+  log.appendChild(row);
+  log.scrollTop = log.scrollHeight;
+}
+function rlUpdate(){
+  const used = RL_MAX - rlRemaining;
+  document.getElementById('rlFill').style.width = (used / RL_MAX * 100) + '%';
+  document.getElementById('rlText').textContent = `${rlRemaining} / ${RL_MAX} remaining`;
+  const resetIn = rlReset ? Math.max(0, Math.ceil((rlReset - Date.now())/1000)) : 60;
+  document.getElementById('rlHeaders').innerHTML =
+    `<span class="hk">X-RateLimit-Limit:</span> <span class="hv">${RL_MAX}</span> &nbsp; · &nbsp;
+     <span class="hk">X-RateLimit-Remaining:</span> <span class="hv">${rlRemaining}</span> &nbsp; · &nbsp;
+     <span class="hk">X-RateLimit-Reset:</span> <span class="hv">${resetIn}s</span>`;
+}
+document.getElementById('rlFetch').addEventListener('click', ()=>{
+  if (!rlReset || Date.now() > rlReset){
+    rlReset = Date.now() + 60000;
+    rlRemaining = RL_MAX;
+  }
+  if (rlRemaining > 0){
+    rlRemaining--;
+    const status = rlRemaining <= 2 ? 'warn' : 'ok';
+    rlLog(status, `GET /v1/shipments/TBZ-${48290 + (RL_MAX - rlRemaining)} → 200 OK (${rlRemaining} left)`);
+  } else {
+    const wait = Math.max(1, Math.ceil((rlReset - Date.now())/1000));
+    rlLog('fail', `GET /v1/shipments → 429 Too Many Requests · Retry-After: ${wait}s`);
+  }
+  rlUpdate();
+});
+document.getElementById('rlReset').addEventListener('click', ()=>{
+  rlRemaining = RL_MAX; rlReset = null;
+  document.getElementById('rlLog').innerHTML = '<div class="rl-log-row"><span class="t">--:--:--</span><span class="s">·</span><span class="m">Window reset. Quota refilled.</span></div>';
+  rlUpdate();
+});
+setInterval(()=>{ if (rlReset) rlUpdate(); }, 1000);
+rlUpdate();
+</script>
+</body>
+</html>
